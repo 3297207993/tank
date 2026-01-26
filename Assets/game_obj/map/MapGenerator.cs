@@ -1,0 +1,314 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using Unity.Netcode;
+using UnityEditor.Animations;
+using UnityEngine;
+
+
+//注意，只有服务器端才能挂载此脚本
+public class MapGenerator : MonoBehaviour
+{
+    Vector2Int mapSize = new Vector2Int(100, 100);
+    public Vector2Int MapSize { get { return mapSize; } }
+    public Vector2 ScaledMapSize { get { return new Vector2(mapSize.x * mapScale, mapSize.y * mapScale); } }
+    private GameObject parentObj;
+    public GameObject roadblock;
+    private static readonly float mapScale = 2.0f;
+    public GameObject mapContainer;
+    public void ResetMap()
+    {
+        //TO DO: 重置地图
+        if(parentObj) parentObj.GetComponent<NetworkObject>().Despawn(true);
+        parentObj = Instantiate(mapContainer, Vector3.zero, Quaternion.identity);
+        parentObj.GetComponent<NetworkObject>().Spawn(true);
+    }
+
+    public void GenerateMap()
+    {
+        GameObject[] tankList = GameObject.FindGameObjectsWithTag("Tank");
+        //TO DO: 生成地图
+        mapSize = new Vector2Int(UnityEngine.Random.Range(5, 20), UnityEngine.Random.Range(5, 20));
+        MapDataContainer mapData = new MapDataContainer(mapSize);
+        List<Vector2Int> tankPos = new List<Vector2Int>();
+        for(int i = 0; i < tankList.Length; i++)
+        {
+            Vector2Int pos;
+            do
+            {
+                pos = new Vector2Int(UnityEngine.Random.Range(0, mapSize.x), UnityEngine.Random.Range(0, mapSize.y));
+            } while (tankPos.Contains(pos));
+            tankPos.Add(pos);
+        }
+        bool IsConnectedAll()
+        {
+            //只要确保tankPos[0]和其他位置互通，就说明所有位置互通
+            for (int i = 1;i < tankPos.Count;i++)
+            {
+                if (!mapData.isConnected(tankPos[i], tankPos[0])) return false;
+            }
+            return true;
+        }
+        mapData.ForEach((bool oldValue) =>
+        {
+            return true;
+        });
+        //消除10%的路障，直到所有坦克位置互通
+        while (!IsConnectedAll())
+        {
+            mapData.ForEach((bool oldValue) =>
+            {
+                if(oldValue) {
+                    if (UnityEngine.Random.Range(0, 100) < 10)
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        return true;
+                    }
+                }
+                else
+                {
+                    return false;
+                }
+            });
+        }
+        for(int i = 0; i < tankList.Length; i++)
+        {
+            Vector2Int pos = tankPos[i];
+            tankList[i].transform.position = 
+                new Vector3((pos.x + 0.5f) * mapScale, (pos.y + 0.5f) * mapScale,0);
+        }
+        for(int i=0;i<mapData.xCount;i++)
+        {
+            for(int j=0;j<mapData.yCount;j++)
+            {
+                Vector3 blockPos = new Vector3(i * mapScale, j * mapScale,0);
+                //下
+                if (mapData.GetData(new MapDataContainer.BlockPosition(new Vector2Int(i, j), MapDataContainer.BlockDirction.Down)))
+                {
+                    GameObject obj = Instantiate(roadblock, blockPos + new Vector3(mapScale / 2, 0, 0), Quaternion.Euler(0, 0, 90), parentObj.transform);
+                    obj.GetComponent<NetworkObject>().Spawn(true);
+                    obj.transform.SetParent(parentObj.transform);
+                }
+                //左
+                if (mapData.GetData(new MapDataContainer.BlockPosition(new Vector2Int(i, j), MapDataContainer.BlockDirction.Left)))
+                {
+                    GameObject obj = Instantiate(roadblock, blockPos + new Vector3(0, mapScale / 2, 0), Quaternion.identity, parentObj.transform);
+                    obj.GetComponent<NetworkObject>().Spawn(true);
+                    obj.transform.SetParent(parentObj.transform);
+                }
+            }
+        }
+        for(int i=0;i<mapData.xCount;i++)
+        {
+            //上
+            if (mapData.GetData(new MapDataContainer.BlockPosition(new Vector2Int(i, mapData.yCount - 1), MapDataContainer.BlockDirction.Up)))
+            {
+                Vector3 blockPos = new Vector3(i * mapScale, mapData.yCount * mapScale,0);
+                GameObject obj = Instantiate(roadblock, blockPos + new Vector3(mapScale / 2, 0, 0), Quaternion.Euler(0, 0, 90), parentObj.transform);
+                obj.GetComponent<NetworkObject>().Spawn(true);
+                obj.transform.SetParent(parentObj.transform);
+            }
+        }
+        for(int i=0;i<mapData.yCount;i++)
+        {
+            //右
+            if (mapData.GetData(new MapDataContainer.BlockPosition(new Vector2Int(mapData.xCount - 1, i), MapDataContainer.BlockDirction.Right)))
+            {
+                Vector3 blockPos = new Vector3(mapData.xCount * mapScale, i * mapScale,0);
+                GameObject obj = Instantiate(roadblock, blockPos + new Vector3(0, mapScale / 2, 0), Quaternion.identity, parentObj.transform);
+                obj.GetComponent<NetworkObject>().Spawn(true);
+                obj.transform.SetParent(parentObj.transform);
+            }
+        }
+    }
+}
+
+
+class MapDataContainer
+{
+    bool[][] data;
+    public MapDataContainer(int xCount, int yCount)
+    {
+        data = new bool[xCount * 2 + 1][];
+        for (int i = 0; i < xCount * 2 + 1; i++)
+        {
+            if (i % 2 == 0) data[i] = new bool[yCount];
+            else data[i] = new bool[yCount + 1];
+        }
+    }
+    public MapDataContainer(Vector2Int size): this(size.x, size.y)
+    {
+    }
+
+    public int DataCount
+    {
+        get { 
+            return (xCount+1) * yCount + xCount * (yCount - 1);
+        }
+    }
+
+    public int xCount
+    {
+        get
+        {
+            int xCount = data.Length;
+            xCount -= 1;
+            xCount /= 2;
+            return xCount;
+        }
+    }
+
+    public int yCount
+    {
+        get
+        {
+            return data[0].Length;
+        }
+    }
+
+    public Vector2Int Size
+    {
+        get
+        {
+            return new Vector2Int(xCount, yCount);
+        }
+    }
+
+    public int getCount(bool value)
+    {
+        int count = 0;
+        for(int i = 0; i < data.Length; i++)
+        {
+            for(int j = 0; j < data[i].Length; j++)
+            {
+                if (data[i][j] == value) count++;
+            }
+        }
+        return count;
+    }
+
+    public bool GetData(BlockPosition pos)
+    {
+        Vector2Int v = pos.pos;
+        switch (pos.dir)
+        {
+            case BlockDirction.Up:
+                return data[v.x * 2 + 1][v.y + 1];
+            case BlockDirction.Down:
+                return data[v.x * 2 + 1][v.y];
+            case BlockDirction.Left:
+                return data[v.x * 2][v.y];
+            case BlockDirction.Right:
+                return data[v.x * 2 + 2][v.y];
+            default:
+                return false;
+        }
+    }
+
+    public bool GetData(Vector2Int pos, BlockDirction dir)
+    {
+        return GetData(new BlockPosition(pos, dir));
+    }
+
+    public bool isConnected(Vector2Int pos1, Vector2Int pos2)
+    {
+        bool[][] grid = new bool[xCount][];
+        for(int i = 0; i < xCount; i++)
+        {
+            grid[i] = new bool[yCount];
+        }
+        Queue<Vector2Int> queue = new Queue<Vector2Int>();
+        queue.Enqueue(pos1);
+        grid[pos1.x][pos1.y] = true;
+        while (queue.Count > 0)
+        {
+            Vector2Int cur = queue.Dequeue();
+            if (cur == pos2) return true;
+            //上
+            if (cur.y + 1 < yCount && !GetData(cur, BlockDirction.Up) && !grid[cur.x][cur.y + 1])
+            {
+                grid[cur.x][cur.y + 1] = true;
+                queue.Enqueue(new Vector2Int(cur.x, cur.y + 1));
+            }
+            //下
+            if (cur.y - 1 >= 0 && !GetData(cur, BlockDirction.Down) && !grid[cur.x][cur.y - 1])
+            {
+                grid[cur.x][cur.y - 1] = true;
+                queue.Enqueue(new Vector2Int(cur.x, cur.y - 1));
+            }
+            //左
+            if (cur.x - 1 >= 0 && !GetData(cur, BlockDirction.Left) && !grid[cur.x - 1][cur.y])
+            {
+                grid[cur.x - 1][cur.y] = true;
+                queue.Enqueue(new Vector2Int(cur.x - 1, cur.y));
+            }
+            //右
+            if (cur.x + 1 < xCount && !GetData(cur, BlockDirction.Right) && !grid[cur.x + 1][cur.y])
+            {
+                grid[cur.x + 1][cur.y] = true;
+                queue.Enqueue(new Vector2Int(cur.x + 1, cur.y));
+            }
+        }
+        return false;
+    }
+
+    public void SetData(BlockPosition pos, bool value)
+    {
+        Vector2Int v = pos.pos;
+        switch (pos.dir)
+        {
+            case BlockDirction.Up:
+                data[v.x * 2 + 1][v.y + 1] = value;
+                break;
+            case BlockDirction.Down:
+                data[v.x * 2 + 1][v.y] = value;
+                break;
+            case BlockDirction.Left:
+                data[v.x * 2][v.y] = value;
+                break;
+            case BlockDirction.Right:
+                data[v.x * 2 + 2][v.y] = value;
+                break;
+        }
+    }
+
+    public void SetData(Vector2Int pos1, BlockDirction dir, bool value)
+    {
+        SetData(new BlockPosition(pos1, dir), value);
+    }
+
+    public void ForEach(Func<bool,bool> callBack)
+    {
+        for(int i = 0; i < data.Length; i++)
+        {
+            for(int j = 0; j < data[i].Length; j++)
+            {
+                data[i][j] = callBack(data[i][j]);
+            }
+        }
+    }
+
+
+    public struct BlockPosition
+    {
+        public Vector2Int pos;
+        public BlockDirction dir;
+        public BlockPosition(Vector2Int pos,BlockDirction dir)
+        {
+            this.pos = pos;
+            this.dir = dir;
+        }
+    }
+
+    public enum BlockDirction
+    {
+        Up,
+        Down,
+        Left,
+        Right
+    }
+}

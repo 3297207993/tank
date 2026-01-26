@@ -336,6 +336,7 @@ GameObject:
   - component: {fileID: 1124356885}
   - component: {fileID: 1124356887}
   - component: {fileID: 1124356888}
+  - component: {fileID: 1124356889}
   m_Layer: 0
   m_Name: ConnectionView
   m_TagString: Untagged
@@ -410,6 +411,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   item: {fileID: 9197481963319205126, guid: 6d2f6e7e4ed263149958964d01142980, type: 3}
+--- !u!114 &1124356889
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1124356884}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 78bd6451ab818ad429e1e633c0671f2d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  roadblock: {fileID: 1839805178956632874, guid: 0add12dcc76257646942e3bd11a69d3b, type: 3}
+  mapContainer: {fileID: 1732248067435453294, guid: f05398e289fbc584d996250415d91f49, type: 3}
 --- !u!1 &1826875449
 GameObject:
   m_ObjectHideFlags: 0

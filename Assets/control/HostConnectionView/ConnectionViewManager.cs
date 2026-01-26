@@ -43,7 +43,19 @@ public class ConnectionViewManager : NetworkBehaviour
     }
     private void OnDisable()
     {
-        Camera.main.transform.position = new Vector3(0, 0, -10);
+        if (IsServer)
+        {
+            MapGenerator gen = GetComponent<MapGenerator>();
+            gen.ResetMap();
+            gen.GenerateMap();
+            SetCameraData_ClientRpc(new Vector3(gen.ScaledMapSize.x / 2, gen.ScaledMapSize.y / 2, -10), Mathf.Max(gen.ScaledMapSize.x, gen.ScaledMapSize.y) / 2);
+        }
+    }
+    [ClientRpc]
+    private void SetCameraData_ClientRpc(Vector3 position, float size)
+    {
+        Camera.main.transform.position = position;
+        Camera.main.orthographicSize = size;
     }
     List<ServerData> connectedClients = new List<ServerData>();
     private void OnClientConnected(ulong clientId)

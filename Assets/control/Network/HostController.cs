@@ -14,7 +14,7 @@ public class HostController : MonoBehaviour
 
     void StartHost()
     {
-        NetworkManager.Singleton.StartHost();
+        if(!NetworkManager.Singleton.IsClient)NetworkManager.Singleton.StartHost();
     }
 
     // Update is called once per frame

@@ -43,11 +43,5 @@ public class ClientVieManager : MonoBehaviour
         });
     }
 
-    public static string clientName = "Player";
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+    public static string clientName = "·¿Ö÷";
 }
