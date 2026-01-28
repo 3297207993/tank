@@ -5,8 +5,7 @@
             <ui:Label tabindex="-1" text="id" parse-escape-sequences="true" display-tooltip-when-elided="true" name="id" />
         </ui:VisualElement>
         <ui:VisualElement style="flex-grow: 1; flex-direction: row; justify-content: flex-end; align-items: center;">
-            <ui:Button text="允许" parse-escape-sequences="true" display-tooltip-when-elided="true" name="enable" style="margin-right: 100px;" />
-            <ui:Button text="拒绝" parse-escape-sequences="true" display-tooltip-when-elided="true" name="disable" />
+            <ui:Button text="踢出" parse-escape-sequences="true" display-tooltip-when-elided="true" name="kick" style="background-color: rgb(213, 0, 2);" />
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

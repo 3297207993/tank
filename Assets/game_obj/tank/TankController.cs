@@ -6,6 +6,7 @@ using UnityEngine;
 public class TankController : NetworkBehaviour
 {
     public GameObject turret;
+    public GameObject bullet;
     // Start is called before the first frame update
     void Start()
     {
@@ -52,6 +53,10 @@ public class TankController : NetworkBehaviour
             turretRight();
             if(IsClient && !IsServer) updateMovement_ServerRpc(KeyCode.Period);
         }
+        if(Input.GetKeyDown(KeyCode.Space))
+        {
+            fire_ServerRpc();
+        }
     }
 
     void forward() { transform.Translate(Vector3.up * Time.deltaTime * 5); }
@@ -60,6 +65,12 @@ public class TankController : NetworkBehaviour
     void turnRight() { transform.Rotate(Vector3.forward, -180 * Time.deltaTime); }
     void turretLeft() { turret.transform.Rotate(Vector3.forward, 180 * Time.deltaTime); }
     void turretRight() { turret.transform.Rotate(Vector3.forward, -180 * Time.deltaTime); }
+    [ServerRpc]
+    void fire_ServerRpc()
+    {
+        var obj = Instantiate(bullet, turret.transform.position + turret.transform.up * 1.2f, turret.transform.rotation);
+        obj.GetComponent<NetworkObject>().Spawn(true);
+    }
 
     [ServerRpc]
     void updateMovement_ServerRpc(KeyCode key) {
@@ -83,6 +94,22 @@ public class TankController : NetworkBehaviour
             case KeyCode.Period:
                 turretRight();
                 break;
+        }
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if(collision.gameObject.tag=="Bullet")
+        {
+            if (IsServer)
+            {
+                if (GameObject.FindGameObjectsWithTag("Tank").Length <= 2)
+                {
+                    MapGenerator gen = FindObjectOfType<MapGenerator>();
+                    gen.ResetAndGenerateLater(2.0f);
+                }
+                gameObject.GetComponent<NetworkObject>().Despawn(true); 
+            }
         }
     }
 }

@@ -7,28 +7,61 @@ using UnityEditor.Animations;
 using UnityEngine;
 
 
-//注意，只有服务器端才能挂载此脚本
-public class MapGenerator : MonoBehaviour
+//注意，只有服务器可以调用这个脚本里的方法
+public class MapGenerator : NetworkBehaviour
 {
     Vector2Int mapSize = new Vector2Int(100, 100);
     public Vector2Int MapSize { get { return mapSize; } }
     public Vector2 ScaledMapSize { get { return new Vector2(mapSize.x * mapScale, mapSize.y * mapScale); } }
-    private GameObject parentObj;
     public GameObject roadblock;
-    private static readonly float mapScale = 2.0f;
+    private static readonly float mapScale = 3.0f;
     public GameObject mapContainer;
+    public GameObject tankObj;
     public void ResetMap()
     {
         //TO DO: 重置地图
-        if(parentObj) parentObj.GetComponent<NetworkObject>().Despawn(true);
-        parentObj = Instantiate(mapContainer, Vector3.zero, Quaternion.identity);
-        parentObj.GetComponent<NetworkObject>().Spawn(true);
+        foreach(Transform child in mapContainer.transform)
+        {
+            child.GetComponent<NetworkObject>().Despawn(true);
+        }
+        GameObject[] tankList = GameObject.FindGameObjectsWithTag("Tank");
+        foreach(GameObject tank in tankList)
+        {
+            tank.GetComponent<NetworkObject>().Despawn(true);
+        }
+        GameObject[] bulletList = GameObject.FindGameObjectsWithTag("Bullet"); 
+        foreach (GameObject bullet in bulletList)
+        {
+            bullet.GetComponent<NetworkObject>().Despawn(true);
+        }
+        foreach (var client in NetworkManager.Singleton.ConnectedClientsList)
+        {
+            GameObject tank = Instantiate(tankObj, new Vector3(0, 0, 0), Quaternion.identity);
+            tank.GetComponent<NetworkObject>().SpawnAsPlayerObject(client.ClientId, true);
+        }
+    }
+
+    public void ResetAndGenerate()
+    {
+        ResetMap();
+        GenerateMap();
+    }
+
+    public void ResetAndGenerateLater(float delay)
+    {
+        Invoke(nameof(ResetAndGenerate), delay);
+    }
+
+    [ClientRpc]
+    private void SetCameraData_ClientRpc(Vector2 ScaledMapSize)
+    {
+        Camera.main.transform.position = new Vector3(ScaledMapSize.x / 2, ScaledMapSize.y / 2, -10);
+        Camera.main.orthographicSize = Mathf.Max(ScaledMapSize.x / Camera.main.aspect, ScaledMapSize.y) / 2.0f;
     }
 
     public void GenerateMap()
     {
         GameObject[] tankList = GameObject.FindGameObjectsWithTag("Tank");
-        //TO DO: 生成地图
         mapSize = new Vector2Int(UnityEngine.Random.Range(5, 20), UnityEngine.Random.Range(5, 20));
         MapDataContainer mapData = new MapDataContainer(mapSize);
         List<Vector2Int> tankPos = new List<Vector2Int>();
@@ -75,7 +108,19 @@ public class MapGenerator : MonoBehaviour
                 }
             });
         }
-        for(int i = 0; i < tankList.Length; i++)
+        //让边缘全是路障
+        for(int i=0;i<mapData.xCount;i++)
+        {
+            mapData.SetData(new MapDataContainer.BlockPosition(new Vector2Int(i, 0), MapDataContainer.BlockDirction.Down), true);
+            mapData.SetData(new MapDataContainer.BlockPosition(new Vector2Int(i, mapData.yCount - 1), MapDataContainer.BlockDirction.Up), true);
+        }
+        for(int i=0;i<mapData.yCount;i++)
+        {
+            mapData.SetData(new MapDataContainer.BlockPosition(new Vector2Int(0, i), MapDataContainer.BlockDirction.Left), true);
+            mapData.SetData(new MapDataContainer.BlockPosition(new Vector2Int(mapData.xCount - 1, i), MapDataContainer.BlockDirction.Right), true);
+        }
+        //设置坦克位置
+        for (int i = 0; i < tankList.Length; i++)
         {
             Vector2Int pos = tankPos[i];
             tankList[i].transform.position = 
@@ -89,16 +134,16 @@ public class MapGenerator : MonoBehaviour
                 //下
                 if (mapData.GetData(new MapDataContainer.BlockPosition(new Vector2Int(i, j), MapDataContainer.BlockDirction.Down)))
                 {
-                    GameObject obj = Instantiate(roadblock, blockPos + new Vector3(mapScale / 2, 0, 0), Quaternion.Euler(0, 0, 90), parentObj.transform);
+                    GameObject obj = Instantiate(roadblock, blockPos + new Vector3(mapScale / 2, 0, 0), Quaternion.Euler(0, 0, 90), mapContainer.transform);
                     obj.GetComponent<NetworkObject>().Spawn(true);
-                    obj.transform.SetParent(parentObj.transform);
+                    obj.transform.SetParent(mapContainer.transform);
                 }
                 //左
                 if (mapData.GetData(new MapDataContainer.BlockPosition(new Vector2Int(i, j), MapDataContainer.BlockDirction.Left)))
                 {
-                    GameObject obj = Instantiate(roadblock, blockPos + new Vector3(0, mapScale / 2, 0), Quaternion.identity, parentObj.transform);
+                    GameObject obj = Instantiate(roadblock, blockPos + new Vector3(0, mapScale / 2, 0), Quaternion.identity, mapContainer.transform);
                     obj.GetComponent<NetworkObject>().Spawn(true);
-                    obj.transform.SetParent(parentObj.transform);
+                    obj.transform.SetParent(mapContainer.transform);
                 }
             }
         }
@@ -108,9 +153,9 @@ public class MapGenerator : MonoBehaviour
             if (mapData.GetData(new MapDataContainer.BlockPosition(new Vector2Int(i, mapData.yCount - 1), MapDataContainer.BlockDirction.Up)))
             {
                 Vector3 blockPos = new Vector3(i * mapScale, mapData.yCount * mapScale,0);
-                GameObject obj = Instantiate(roadblock, blockPos + new Vector3(mapScale / 2, 0, 0), Quaternion.Euler(0, 0, 90), parentObj.transform);
+                GameObject obj = Instantiate(roadblock, blockPos + new Vector3(mapScale / 2, 0, 0), Quaternion.Euler(0, 0, 90), mapContainer.transform);
                 obj.GetComponent<NetworkObject>().Spawn(true);
-                obj.transform.SetParent(parentObj.transform);
+                obj.transform.SetParent(mapContainer.transform);
             }
         }
         for(int i=0;i<mapData.yCount;i++)
@@ -119,11 +164,12 @@ public class MapGenerator : MonoBehaviour
             if (mapData.GetData(new MapDataContainer.BlockPosition(new Vector2Int(mapData.xCount - 1, i), MapDataContainer.BlockDirction.Right)))
             {
                 Vector3 blockPos = new Vector3(mapData.xCount * mapScale, i * mapScale,0);
-                GameObject obj = Instantiate(roadblock, blockPos + new Vector3(0, mapScale / 2, 0), Quaternion.identity, parentObj.transform);
+                GameObject obj = Instantiate(roadblock, blockPos + new Vector3(0, mapScale / 2, 0), Quaternion.identity, mapContainer.transform);
                 obj.GetComponent<NetworkObject>().Spawn(true);
-                obj.transform.SetParent(parentObj.transform);
+                obj.transform.SetParent(mapContainer.transform);
             }
         }
+        SetCameraData_ClientRpc(ScaledMapSize);
     }
 }
 

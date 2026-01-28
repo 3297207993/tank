@@ -26,10 +26,7 @@ public class ConnectionViewManager : NetworkBehaviour
         };
         content.bindItem = (VisualElement element, int index) =>
         {
-            var label = element.Q<Label>("name");
-            label.text = connectedClients[index].data.name;
-            var id = element.Q<Label>("id");
-            id.text = connectedClients[index].data.clientId.ToString();
+            new ClientItemManager(connectedClients[index]).bind(element);
         };
 
         NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
@@ -43,21 +40,17 @@ public class ConnectionViewManager : NetworkBehaviour
     }
     private void OnDisable()
     {
+        ResetMap();
+    }
+    public void ResetMap()
+    {
         if (IsServer)
         {
-            MapGenerator gen = GetComponent<MapGenerator>();
-            gen.ResetMap();
-            gen.GenerateMap();
-            SetCameraData_ClientRpc(new Vector3(gen.ScaledMapSize.x / 2, gen.ScaledMapSize.y / 2, -10), Mathf.Max(gen.ScaledMapSize.x, gen.ScaledMapSize.y) / 2);
+            MapGenerator gen =  FindObjectOfType<MapGenerator>();
+            gen.ResetAndGenerate();
         }
     }
-    [ClientRpc]
-    private void SetCameraData_ClientRpc(Vector3 position, float size)
-    {
-        Camera.main.transform.position = position;
-        Camera.main.orthographicSize = size;
-    }
-    List<ServerData> connectedClients = new List<ServerData>();
+    List<ClientData> connectedClients = new List<ClientData>();
     private void OnClientConnected(ulong clientId)
     {
         if (NetworkManager.Singleton.IsServer)
@@ -68,10 +61,10 @@ public class ConnectionViewManager : NetworkBehaviour
     }
     private void OnClientDisconnect(ulong clientId)
     {
-        connectedClients.RemoveAll((item) => item.data.clientId == clientId);
+        connectedClients.RemoveAll((item) => item.clientId == clientId);
         content.RefreshItems();
     }
-    struct ClientData : INetworkSerializable
+    public struct ClientData : INetworkSerializable
     {
         public ulong clientId;
         public string name;
@@ -79,17 +72,6 @@ public class ConnectionViewManager : NetworkBehaviour
         {
             serializer.SerializeValue(ref clientId);
             serializer.SerializeValue(ref name);
-        }
-    }
-    struct ServerData : INetworkSerializable
-    {
-        public ClientData data;
-        public bool isEnabled;
-
-        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
-        {
-            serializer.SerializeValue(ref data);
-            serializer.SerializeValue(ref isEnabled);
         }
     }
     [ClientRpc]
@@ -105,27 +87,23 @@ public class ConnectionViewManager : NetworkBehaviour
     void addClientData_ServerRpc(ClientData data, ServerRpcParams rpcParams = default) { 
         foreach (var item in connectedClients)
         {
-            if (item.data.clientId == data.clientId)
+            if (item.clientId == data.clientId)
             {
                 return;
             }
         }
-        connectedClients.Add(new ServerData
-        {
-            data = new ClientData() { name = data.name, clientId = rpcParams.Receive.SenderClientId },
-            isEnabled = false
-        });
+        connectedClients.Add(new ClientData() { name = data.name, clientId = rpcParams.Receive.SenderClientId });
         content.RefreshItems();
         foreach (var i in connectedClients){updateConnectionData_ClientRpc(i);}
     }
     [ClientRpc]
-    void updateConnectionData_ClientRpc(ServerData data) {
+    void updateConnectionData_ClientRpc(ClientData data) {
         if (connectedClients.Contains(data)) return;
-        else if (connectedClients.FindAll((ServerData item)=> item.data.clientId == data.data.clientId).Count != 0)
+        else if (connectedClients.FindAll((ClientData item)=> item.clientId == data.clientId).Count != 0)
         {
             for(int i = 0; i < connectedClients.Count; i++)
             {
-                if (connectedClients[i].data.clientId == data.data.clientId)
+                if (connectedClients[i].clientId == data.clientId)
                 {
                     connectedClients[i] = data;
                     break;
