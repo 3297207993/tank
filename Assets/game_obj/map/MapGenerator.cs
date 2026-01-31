@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Netcode;
-using UnityEditor.Animations;
 using UnityEngine;
 
 
@@ -49,6 +48,7 @@ public class MapGenerator : NetworkBehaviour
 
     public void ResetAndGenerateLater(float delay)
     {
+        CancelInvoke(nameof(ResetAndGenerate));
         Invoke(nameof(ResetAndGenerate), delay);
     }
 

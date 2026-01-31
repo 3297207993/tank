@@ -2,17 +2,17 @@
     <ui:VisualElement focusable="false" name="VisualElement" style="flex-grow: 1; align-items: center; justify-content: center; align-self: auto;">
         <ui:VisualElement style="flex-grow: 2; align-items: center; justify-content: center;">
             <ui:VisualElement name="VisualElement" style="flex-grow: 0; flex-direction: row;">
-                <ui:Label tabindex="-1" text="名字" parse-escape-sequences="true" display-tooltip-when-elided="true" style="font-size: 30px; flex-grow: 1;" />
-                <ui:TextField picking-mode="Ignore" usage-hints="None" is-delayed="false" max-length="-1" hide-mobile-input="false" name="name" style="justify-content: flex-start; align-self: auto; height: 54px; width: 473px; font-size: 30px; flex-grow: 10;" />
+                <ui:Label tabindex="-1" text="名字" parse-escape-sequences="true" display-tooltip-when-elided="true" style="font-size: 30px; flex-grow: 1; -unity-font-definition: url(&quot;project://database/Assets/fonts/STKAITI%20SDF%201.asset?fileID=11400000&amp;guid=c4fb04547d834f643a761f0d0dc5170e&amp;type=2#STKAITI SDF 1&quot;);" />
+                <ui:TextField picking-mode="Ignore" usage-hints="None" is-delayed="false" max-length="-1" hide-mobile-input="false" name="name" style="justify-content: flex-start; align-self: auto; height: 54px; width: 473px; font-size: 30px; flex-grow: 10; -unity-font-definition: url(&quot;project://database/Assets/fonts/STKAITI%20SDF%201.asset?fileID=11400000&amp;guid=c4fb04547d834f643a761f0d0dc5170e&amp;type=2#STKAITI SDF 1&quot;);" />
             </ui:VisualElement>
             <ui:VisualElement style="flex-grow: 0; flex-direction: row; width: 100%;">
-                <ui:Label tabindex="-1" text="IP" parse-escape-sequences="true" display-tooltip-when-elided="true" style="font-size: 30px; flex-grow: 1;" />
-                <ui:TextField picking-mode="Ignore" usage-hints="None" is-delayed="false" max-length="-1" hide-mobile-input="false" name="ip" style="justify-content: flex-start; align-self: auto; height: 54px; width: 473px; font-size: 30px; flex-direction: row;" />
+                <ui:Label tabindex="-1" text="IP" parse-escape-sequences="true" display-tooltip-when-elided="true" style="font-size: 30px; flex-grow: 1; -unity-font-definition: url(&quot;project://database/Assets/fonts/STKAITI%20SDF%201.asset?fileID=11400000&amp;guid=c4fb04547d834f643a761f0d0dc5170e&amp;type=2#STKAITI SDF 1&quot;);" />
+                <ui:TextField picking-mode="Ignore" usage-hints="None" is-delayed="false" max-length="-1" hide-mobile-input="false" name="ip" style="justify-content: flex-start; align-self: auto; height: 54px; width: 473px; font-size: 30px; flex-direction: row; -unity-font-definition: url(&quot;project://database/Assets/fonts/STKAITI%20SDF%201.asset?fileID=11400000&amp;guid=c4fb04547d834f643a761f0d0dc5170e&amp;type=2#STKAITI SDF 1&quot;);" />
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement style="flex-grow: 1; flex-direction: row; align-items: center; justify-content: center; height: auto; width: auto; flex-basis: auto;">
-            <ui:Button text="确定" parse-escape-sequences="true" display-tooltip-when-elided="true" name="ok" style="margin-right: 100px;" />
-            <ui:Button text="退出" parse-escape-sequences="true" display-tooltip-when-elided="true" name="canlcel" />
+            <ui:Button text="确定" parse-escape-sequences="true" display-tooltip-when-elided="true" name="ok" style="margin-right: 100px; -unity-font-definition: url(&quot;project://database/Assets/fonts/STKAITI%20SDF%201.asset?fileID=11400000&amp;guid=c4fb04547d834f643a761f0d0dc5170e&amp;type=2#STKAITI SDF 1&quot;);" />
+            <ui:Button text="退出" parse-escape-sequences="true" display-tooltip-when-elided="true" name="quit" style="-unity-font-definition: url(&quot;project://database/Assets/fonts/STKAITI%20SDF%201.asset?fileID=11400000&amp;guid=c4fb04547d834f643a761f0d0dc5170e&amp;type=2#STKAITI SDF 1&quot;);" />
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

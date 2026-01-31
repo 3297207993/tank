@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
 
 public class ConnectionViewManager : NetworkBehaviour
@@ -15,6 +16,9 @@ public class ConnectionViewManager : NetworkBehaviour
         ui = GetComponent<UIDocument>().rootVisualElement;
         ui.Q<Button>("start").clicked += () => { startGame_ClientRpc(); };
         ui.Q<Button>("start").SetEnabled(false);
+        ui.Q<Button>("quit").clicked += () => { 
+            SceneManager.LoadScene("start"); 
+        };
 
         //绑定listview
         content = ui.Q<ListView>("list");
@@ -29,18 +33,20 @@ public class ConnectionViewManager : NetworkBehaviour
             new ClientItemManager(connectedClients[index]).bind(element);
         };
 
-        NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
-        NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnect;
+        NetworkManager.OnClientConnectedCallback += OnClientConnected;
+        NetworkManager.OnClientDisconnectCallback += OnClientDisconnect;
+    }
+
+    private void OnDestroy()
+    {
+        NetworkManager.OnClientConnectedCallback -= OnClientConnected;
+        NetworkManager.OnClientDisconnectCallback -= OnClientDisconnect;
     }
 
     private void OnEnable()
     {
         //开局时把摄像机移开，防止看到场景
         Camera.main.transform.position = new Vector3(10000, 0, -10);
-    }
-    private void OnDisable()
-    {
-        ResetMap();
     }
     public void ResetMap()
     {
@@ -79,7 +85,7 @@ public class ConnectionViewManager : NetworkBehaviour
         var data = new ClientData
         {
             clientId = NetworkManager.Singleton.LocalClientId,
-            name = ClientVieManager.clientName
+            name = ClientViewManager.clientName
         };
         addClientData_ServerRpc(data);
     }
@@ -120,5 +126,6 @@ public class ConnectionViewManager : NetworkBehaviour
     public void startGame_ClientRpc()
     {
         this.gameObject.SetActive(false);
+        ResetMap();
     }
 }

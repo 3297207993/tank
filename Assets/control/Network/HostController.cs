@@ -28,5 +28,6 @@ public class HostController : MonoBehaviour
         {
             NetworkManager.Singleton.Shutdown();
         }
+        Destroy(NetworkManager.Singleton.gameObject);
     }
 }

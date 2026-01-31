@@ -1,11 +1,11 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <ui:VisualElement style="flex-grow: 1; flex-direction: row; min-height: auto; height: auto;">
         <ui:VisualElement style="flex-grow: 1; flex-direction: column; min-height: auto;">
-            <ui:Label tabindex="-1" text="name" parse-escape-sequences="true" display-tooltip-when-elided="true" name="name" style="font-size: 30px; -unity-text-align: upper-left;" />
-            <ui:Label tabindex="-1" text="id" parse-escape-sequences="true" display-tooltip-when-elided="true" name="id" />
+            <ui:Label tabindex="-1" text="name" parse-escape-sequences="true" display-tooltip-when-elided="true" name="name" style="font-size: 30px; -unity-text-align: upper-left; -unity-font-definition: url(&quot;project://database/Assets/fonts/STKAITI%20SDF%201.asset?fileID=11400000&amp;guid=c4fb04547d834f643a761f0d0dc5170e&amp;type=2#STKAITI SDF 1&quot;);" />
+            <ui:Label tabindex="-1" text="id" parse-escape-sequences="true" display-tooltip-when-elided="true" name="id" style="-unity-font-definition: url(&quot;project://database/Assets/fonts/STKAITI%20SDF%201.asset?fileID=11400000&amp;guid=c4fb04547d834f643a761f0d0dc5170e&amp;type=2#STKAITI SDF 1&quot;);" />
         </ui:VisualElement>
         <ui:VisualElement style="flex-grow: 1; flex-direction: row; justify-content: flex-end; align-items: center;">
-            <ui:Button text="踢出" parse-escape-sequences="true" display-tooltip-when-elided="true" name="kick" style="background-color: rgb(213, 0, 2);" />
+            <ui:Button text="踢出" parse-escape-sequences="true" display-tooltip-when-elided="true" name="kick" style="background-color: rgb(213, 0, 2); -unity-font-definition: url(&quot;project://database/Assets/fonts/STKAITI%20SDF%201.asset?fileID=11400000&amp;guid=c4fb04547d834f643a761f0d0dc5170e&amp;type=2#STKAITI SDF 1&quot;);" />
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

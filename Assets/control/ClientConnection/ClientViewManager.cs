@@ -4,25 +4,34 @@ using System.Net;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
 
-public class ClientVieManager : MonoBehaviour
+public class ClientViewManager : MonoBehaviour
 {
     // Start is called before the first frame update
     TextField ipInputField;
     TextField nameInputField;
     Button okButton;
+    Button quitButton;
     void Start()
     {
         var root = GetComponent<UIDocument>().rootVisualElement;
         ipInputField = root.Q<TextField>("ip");
         nameInputField = root.Q<TextField>("name");
         okButton = root.Q<Button>("ok");
+        quitButton = root.Q<Button>("quit");
         okButton.SetEnabled(false);
         okButton.clicked += () =>
         {
             NetworkManager.Singleton.GetComponent<UnityTransport>().ConnectionData.Address = ipInputField.value;
             NetworkManager.Singleton.StartClient();
+        };
+        quitButton.clicked += () =>
+        {
+            NetworkManager.Singleton.Shutdown();
+            Destroy(NetworkManager.Singleton.gameObject);
+            SceneManager.LoadScene("start");
         };
         nameInputField.RegisterValueChangedCallback((evt) =>
         {
