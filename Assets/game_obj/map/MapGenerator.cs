@@ -33,10 +33,10 @@ public class MapGenerator : NetworkBehaviour
         {
             bullet.GetComponent<NetworkObject>().Despawn(true);
         }
-        foreach (var client in NetworkManager.Singleton.ConnectedClientsList)
+        foreach (var data in FindObjectOfType<PlayerListManager>().PlayerList)
         {
             GameObject tank = Instantiate(tankObj, new Vector3(0, 0, 0), Quaternion.identity);
-            tank.GetComponent<NetworkObject>().SpawnAsPlayerObject(client.ClientId, true);
+            tank.GetComponent<NetworkObject>().SpawnAsPlayerObject(data.clientId, true);
         }
     }
 

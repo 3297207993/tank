@@ -1,4 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/control/HostConnectionView/ConnectionViewStyle.uss?fileID=7433441132597879392&amp;guid=3d5dfb5a0b2695848873bbbf04fe7b19&amp;type=3#ConnectionViewStyle" />
     <ui:VisualElement style="flex-grow: 1; flex-direction: row; min-height: auto; height: auto;">
         <ui:VisualElement style="flex-grow: 1; flex-direction: column; min-height: auto;">
             <ui:Label tabindex="-1" text="name" parse-escape-sequences="true" display-tooltip-when-elided="true" name="name" style="font-size: 30px; -unity-text-align: upper-left; -unity-font-definition: url(&quot;project://database/Assets/fonts/STKAITI%20SDF%201.asset?fileID=11400000&amp;guid=c4fb04547d834f643a761f0d0dc5170e&amp;type=2#STKAITI SDF 1&quot;);" />

@@ -3,8 +3,8 @@ using UnityEngine.UIElements;
 
 public class ClientItemManager
 {
-    public ConnectionViewManager.ClientData data { get; set; }
-    public ClientItemManager(ConnectionViewManager.ClientData data)
+    public PlayerListManager.ClientData data { get; set; }
+    public ClientItemManager(PlayerListManager.ClientData data)
     {
         this.data = data;
     }
@@ -16,13 +16,15 @@ public class ClientItemManager
         var id = element.Q<Label>("id");
         id.text = data.clientId.ToString();
         var kick_btn = element.Q<Button>("kick");
+        if(!NetworkManager.Singleton.IsServer)kick_btn.style.display = DisplayStyle.None;
+        else if(NetworkManager.Singleton.LocalClientId == data.clientId) kick_btn.SetEnabled(false);
         kick_btn.clicked += () =>
-        {
-            if (NetworkManager.Singleton.IsServer)
             {
-                if(NetworkManager.Singleton.LocalClientId!=data.clientId) 
-                    NetworkManager.Singleton.DisconnectClient(data.clientId);
-            }
-        };
+                if (NetworkManager.Singleton.IsServer)
+                {
+                    if (NetworkManager.Singleton.LocalClientId != data.clientId)
+                        NetworkManager.Singleton.DisconnectClient(data.clientId);
+                }
+            };
     }
 }

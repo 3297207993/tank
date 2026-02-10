@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
@@ -20,9 +21,10 @@ public class ConnectionViewManager : NetworkBehaviour
             SceneManager.LoadScene("start"); 
         };
 
+        PlayerListManager manager = FindObjectOfType<PlayerListManager>();
         //绑定listview
         content = ui.Q<ListView>("list");
-        content.itemsSource = connectedClients;
+        content.itemsSource = manager.PlayerList;
         content.makeItem = () =>
         {
             var newListInstance = item.Instantiate();
@@ -30,21 +32,14 @@ public class ConnectionViewManager : NetworkBehaviour
         };
         content.bindItem = (VisualElement element, int index) =>
         {
-            new ClientItemManager(connectedClients[index]).bind(element);
+            new ClientItemManager(manager.PlayerList[index]).bind(element);
+        };
+        manager.OnPlayerListChanged += () =>
+        {
+            content.RefreshItems();
+            if(IsServer)ui.Q<Button>("start").SetEnabled(manager.PlayerList.Count > 1);
         };
 
-        NetworkManager.OnClientConnectedCallback += OnClientConnected;
-        NetworkManager.OnClientDisconnectCallback += OnClientDisconnect;
-    }
-
-    private void OnDestroy()
-    {
-        NetworkManager.OnClientConnectedCallback -= OnClientConnected;
-        NetworkManager.OnClientDisconnectCallback -= OnClientDisconnect;
-    }
-
-    private void OnEnable()
-    {
         //开局时把摄像机移开，防止看到场景
         Camera.main.transform.position = new Vector3(10000, 0, -10);
     }
@@ -56,76 +51,17 @@ public class ConnectionViewManager : NetworkBehaviour
             gen.ResetAndGenerate();
         }
     }
-    List<ClientData> connectedClients = new List<ClientData>();
-    private void OnClientConnected(ulong clientId)
+    private void Update()
     {
-        if (NetworkManager.Singleton.IsServer)
+        if (Input.GetKeyDown(KeyCode.Escape))
         {
-            ui.Q<Button>("start").SetEnabled(true);
-            askForMessage_ClientRpc();
+            ui.visible = !ui.visible;
         }
-    }
-    private void OnClientDisconnect(ulong clientId)
-    {
-        connectedClients.RemoveAll((item) => item.clientId == clientId);
-        content.RefreshItems();
-    }
-    public struct ClientData : INetworkSerializable
-    {
-        public ulong clientId;
-        public string name;
-        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
-        {
-            serializer.SerializeValue(ref clientId);
-            serializer.SerializeValue(ref name);
-        }
-    }
-    [ClientRpc]
-    void askForMessage_ClientRpc() {
-        var data = new ClientData
-        {
-            clientId = NetworkManager.Singleton.LocalClientId,
-            name = ClientViewManager.clientName
-        };
-        addClientData_ServerRpc(data);
-    }
-    [ServerRpc(RequireOwnership = false)]
-    void addClientData_ServerRpc(ClientData data, ServerRpcParams rpcParams = default) { 
-        foreach (var item in connectedClients)
-        {
-            if (item.clientId == data.clientId)
-            {
-                return;
-            }
-        }
-        connectedClients.Add(new ClientData() { name = data.name, clientId = rpcParams.Receive.SenderClientId });
-        content.RefreshItems();
-        foreach (var i in connectedClients){updateConnectionData_ClientRpc(i);}
-    }
-    [ClientRpc]
-    void updateConnectionData_ClientRpc(ClientData data) {
-        if (connectedClients.Contains(data)) return;
-        else if (connectedClients.FindAll((ClientData item)=> item.clientId == data.clientId).Count != 0)
-        {
-            for(int i = 0; i < connectedClients.Count; i++)
-            {
-                if (connectedClients[i].clientId == data.clientId)
-                {
-                    connectedClients[i] = data;
-                    break;
-                }
-            }
-        }
-        else
-        {
-            connectedClients.Add(data);
-        }
-        content.RefreshItems();
     }
     [ClientRpc]
     public void startGame_ClientRpc()
     {
-        this.gameObject.SetActive(false);
+        ui.visible = false;
         ResetMap();
     }
 }
