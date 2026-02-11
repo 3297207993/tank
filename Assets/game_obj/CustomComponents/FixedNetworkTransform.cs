@@ -48,9 +48,11 @@ public class FixedNetworkTransform : NetworkBehaviour
             matrix = matrix,
             tickCount = tickCount
         };
-        matrixList.AddLast(data);
         applyMatrix(matrix);
-        if(!IsServer)sendMatrix_ServerRpc(data);
+        if(!IsServer){
+            matrixList.AddLast(data);
+            sendMatrix_ServerRpc(data);
+        }
         else shouldUpdate = true;
     }
 
