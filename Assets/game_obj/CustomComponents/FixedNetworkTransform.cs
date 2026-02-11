@@ -11,7 +11,7 @@ using Vector3 = UnityEngine.Vector3;
 public class FixedNetworkTransform : NetworkBehaviour
 {
     ulong tickCount = 0;
-    bool shouldUpdate = false;
+    bool shouldUpdate = true;
     public float updateFrequency = 0.05f;
     struct MatrixData:INetworkSerializable
     {
@@ -50,7 +50,8 @@ public class FixedNetworkTransform : NetworkBehaviour
         };
         matrixList.AddLast(data);
         applyMatrix(matrix);
-        sendMatrix_ServerRpc(data);
+        if(!IsServer)sendMatrix_ServerRpc(data);
+        else shouldUpdate = true;
     }
 
     public void addMovement(Vector3 movement)
@@ -68,7 +69,7 @@ public class FixedNetworkTransform : NetworkBehaviour
         addMatrix(Matrix4x4.Rotate(Quaternion.Euler(rotate)));
     }
 
-    public void addScale(Vector3 scale)
+    public void setScale(Vector3 scale)
     {
         addMatrix(Matrix4x4.Scale(scale));
     }
@@ -88,14 +89,14 @@ public class FixedNetworkTransform : NetworkBehaviour
         Quaternion rotate = mat.rotation;
         Vector3 scale = matrix.lossyScale;
         transform.localScale = scale;
-        transform.localPosition = pos;
-        transform.localRotation = rotate;
+        transform.position = pos;
+        transform.rotation = rotate;
     }
 
     private void Start()
     {
         if(IsServer)
-            Invoke(nameof(updateTransform),updateFrequency);
+            InvokeRepeating(nameof(updateTransform),updateFrequency,updateFrequency);
     }
 
     void updateTransform()
@@ -130,7 +131,7 @@ public class FixedNetworkTransform : NetworkBehaviour
         Matrix4x4 matrix = Matrix4x4.identity;
         foreach (var i in matrixList)
         {
-            matrix = i.matrix * matrix;
+            matrix *= i.matrix;
         }
         applyMatrix(matrix);
     }

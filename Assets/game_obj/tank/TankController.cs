@@ -21,6 +21,7 @@ public class TankController : NetworkBehaviour
                 com.color = new Color(0.9f, 0.9f, 1f);
             }
         }
+        fixedNetworkTransform = GetComponent<FixedNetworkTransform>();
     }
 
     // Update is called once per frame
@@ -41,22 +42,18 @@ public class TankController : NetworkBehaviour
         if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow))
         {
             forward();
-            if (!IsServer) updateMovement_ServerRpc(KeyCode.W);
         }
         else if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow))
         {
             backward();
-            if (!IsServer) updateMovement_ServerRpc(KeyCode.S);
         }
         if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow))
         {
             turnLeft();
-            if (!IsServer) updateMovement_ServerRpc(KeyCode.A);
         }
         else if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow))
         {
             turnRight();
-            if (!IsServer) updateMovement_ServerRpc(KeyCode.D);
         }
 
         if (Input.GetKey(KeyCode.Comma))
@@ -71,10 +68,12 @@ public class TankController : NetworkBehaviour
         }
     }
 
-    void forward() { transform.Translate(Vector3.up * Time.fixedDeltaTime * 5); }
-    void backward() { transform.Translate(Vector3.down * Time.fixedDeltaTime * 5); }
-    void turnLeft() { transform.Rotate(Vector3.forward, 180 * Time.fixedDeltaTime); }
-    void turnRight() { transform.Rotate(Vector3.forward, -180 * Time.fixedDeltaTime); }
+    FixedNetworkTransform fixedNetworkTransform;
+
+    void forward() { fixedNetworkTransform.addMovement(Vector3.up * Time.fixedDeltaTime * 5); }
+    void backward() { fixedNetworkTransform.addMovement(Vector3.down * Time.fixedDeltaTime * 5); }
+    void turnLeft() { fixedNetworkTransform.addRotate(Vector3.forward * 180 * Time.fixedDeltaTime); }
+    void turnRight() { fixedNetworkTransform.addRotate(Vector3.forward * -180 * Time.fixedDeltaTime); }
     void turretLeft() { turret.transform.Rotate(Vector3.forward, 180 * Time.fixedDeltaTime); }
     void turretRight() { turret.transform.Rotate(Vector3.forward, -180 * Time.fixedDeltaTime); }
     [ServerRpc]
@@ -101,18 +100,6 @@ public class TankController : NetworkBehaviour
     void updateMovement_ServerRpc(KeyCode key) {
         switch (key)
         {
-            case KeyCode.W:
-                forward();
-                break;
-            case KeyCode.S:
-                backward();
-                break;
-            case KeyCode.A:
-                turnLeft();
-                break;
-            case KeyCode.D:
-                turnRight();
-                break;
             case KeyCode.Comma:
                 turretLeft();
                 break;
