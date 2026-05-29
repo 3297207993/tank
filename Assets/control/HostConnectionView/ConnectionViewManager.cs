@@ -12,6 +12,7 @@ public class ConnectionViewManager : NetworkBehaviour
     VisualElement ui;
     ListView content;
     public VisualTreeAsset item;
+    public GameObject TopCanvas;
     void Start()
     {
         ui = GetComponent<UIDocument>().rootVisualElement;
@@ -51,17 +52,22 @@ public class ConnectionViewManager : NetworkBehaviour
             gen.ResetAndGenerate();
         }
     }
+    public void Show(bool show)
+    {
+        ui.visible = show;
+        TopCanvas.SetActive(!show);
+    }
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            ui.visible = !ui.visible;
+            Show(!ui.visible);
         }
     }
     [ClientRpc]
     public void startGame_ClientRpc()
     {
-        ui.visible = false;
+        Show(false);
         ResetMap();
     }
 }
