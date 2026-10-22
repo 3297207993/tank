@@ -11,6 +11,8 @@ public class ConnectionViewManager : NetworkBehaviour
     // Start is called before the first frame update
     VisualElement ui;
     ListView content;
+    readonly List<PlayerListManager.ClientData> playerList = new List<PlayerListManager.ClientData>();
+    PlayerListManager playerListManager;
     public VisualTreeAsset item;
     public GameObject TopCanvas;
     void Start()
@@ -22,10 +24,10 @@ public class ConnectionViewManager : NetworkBehaviour
             SceneManager.LoadScene("start"); 
         };
 
-        PlayerListManager manager = FindObjectOfType<PlayerListManager>();
+        playerListManager = FindObjectOfType<PlayerListManager>();
         //绑定listview
         content = ui.Q<ListView>("list");
-        content.itemsSource = manager.PlayerList;
+        content.itemsSource = playerList;
         content.makeItem = () =>
         {
             var newListInstance = item.Instantiate();
@@ -33,16 +35,39 @@ public class ConnectionViewManager : NetworkBehaviour
         };
         content.bindItem = (VisualElement element, int index) =>
         {
-            new ClientItemManager(manager.PlayerList[index]).bind(element);
+            new ClientItemManager(playerList[index]).bind(element);
         };
-        manager.OnPlayerListChanged += () =>
-        {
-            content.RefreshItems();
-            if(IsServer)ui.Q<Button>("start").SetEnabled(manager.PlayerList.Count > 1);
-        };
+        playerListManager.PlayerList.OnListChanged += OnPlayerListChanged;
+        if (playerListManager.IsSpawned) RefreshPlayerList();
+        else StartCoroutine(RefreshPlayerListWhenSpawned());
 
         //开局时把摄像机移开，防止看到场景
         Camera.main.transform.position = new Vector3(10000, 0, -10);
+    }
+
+    public override void OnDestroy()
+    {
+        if (playerListManager != null) playerListManager.PlayerList.OnListChanged -= OnPlayerListChanged;
+        base.OnDestroy();
+    }
+
+    private void OnPlayerListChanged(NetworkListEvent<PlayerListManager.ClientData> changeEvent)
+    {
+        RefreshPlayerList();
+    }
+
+    private IEnumerator RefreshPlayerListWhenSpawned()
+    {
+        yield return new WaitUntil(() => playerListManager.IsSpawned);
+        RefreshPlayerList();
+    }
+
+    private void RefreshPlayerList()
+    {
+        playerList.Clear();
+        foreach (var data in playerListManager.PlayerList) playerList.Add(data);
+        content.RefreshItems();
+        if (IsServer) ui.Q<Button>("start").SetEnabled(playerList.Count > 1);
     }
     public void ResetMap()
     {

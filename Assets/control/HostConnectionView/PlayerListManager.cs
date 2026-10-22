@@ -1,15 +1,13 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
+using Unity.Collections;
 using Unity.Netcode;
-using UnityEngine;
 
 public class PlayerListManager:NetworkBehaviour
 {
-    public struct ClientData : INetworkSerializable
+    public struct ClientData : INetworkSerializable, IEquatable<ClientData>
     {
         public ulong clientId;
-        public string name;
+        public FixedString64Bytes name;
         public int score;
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
@@ -17,88 +15,72 @@ public class PlayerListManager:NetworkBehaviour
             serializer.SerializeValue(ref name);
             serializer.SerializeValue(ref score);
         }
-    }
-    public Action OnPlayerListChanged;
-    List<ClientData> playerList = new List<ClientData>();
 
-    public void ApplyChanged()
-    {
-        OnPlayerListChanged?.Invoke();
-    }
-    public List<ClientData> PlayerList
-    {
-        get { return playerList; }
+        public bool Equals(ClientData other)
+        {
+            return clientId == other.clientId && name.Equals(other.name) && score == other.score;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is ClientData other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(clientId, name, score);
+        }
     }
 
-    private void Start()
+    //NetworkList 由服务器维护，增删改会自动同步到所有客户端
+    public readonly NetworkList<ClientData> PlayerList = new NetworkList<ClientData>();
+
+    public override void OnNetworkSpawn()
     {
-        NetworkManager.OnClientConnectedCallback += OnClientConnected;
+        if (!IsServer)
+        {
+            SetName_ServerRpc(ClientViewManager.clientName);
+            return;
+        }
+
         NetworkManager.OnClientDisconnectCallback += OnClientDisconnected;
+
+        foreach (ulong clientId in NetworkManager.ConnectedClientsIds)
+        {
+            SetName(clientId, default);
+        }
+        SetName(NetworkManager.LocalClientId, ClientViewManager.clientName);
     }
 
-    void OnDestroy()
+    public override void OnNetworkDespawn()
     {
-        NetworkManager.OnClientConnectedCallback -= OnClientConnected;
         NetworkManager.OnClientDisconnectCallback -= OnClientDisconnected;
     }
 
-    [ClientRpc]
-    void askForMessage_ClientRpc()
-    {
-        var data = new ClientData
-        {
-            clientId = NetworkManager.Singleton.LocalClientId,
-            name = ClientViewManager.clientName
-        };
-        addClientData_ServerRpc(data);
-    }
     [ServerRpc(RequireOwnership = false)]
-    void addClientData_ServerRpc(ClientData data, ServerRpcParams rpcParams = default)
+    void SetName_ServerRpc(FixedString64Bytes name, ServerRpcParams rpcParams = default)
     {
-        foreach (var item in playerList)
-        {
-            if (item.clientId == data.clientId)
-            {
-                return;
-            }
-        }
-        playerList.Add(new ClientData() { name = data.name, clientId = rpcParams.Receive.SenderClientId });
-        ApplyChanged();
-        foreach (var i in playerList) { updatePlayerData_ClientRpc(i); }
+        SetName(rpcParams.Receive.SenderClientId, name);
     }
-    [ClientRpc]
-    public void updatePlayerData_ClientRpc(ClientData data)
+
+    void SetName(ulong clientId, FixedString64Bytes name)
     {
-        if (playerList.Contains(data)) return;
-        else if (playerList.FindAll((ClientData item) => item.clientId == data.clientId).Count != 0)
+        for (int i = 0; i < PlayerList.Count; i++)
         {
-            for (int i = 0; i < playerList.Count; i++)
-            {
-                if (playerList[i].clientId == data.clientId)
-                {
-                    playerList[i] = data;
-                    break;
-                }
-            }
+            if (PlayerList[i].clientId != clientId) continue;
+            var data = PlayerList[i];
+            data.name = name;
+            PlayerList[i] = data;
+            return;
         }
-        else
-        {
-            playerList.Add(data);
-        }
-        ApplyChanged();
+        PlayerList.Add(new ClientData { clientId = clientId, name = name });
     }
 
     private void OnClientDisconnected(ulong clientId)
     {
-        playerList.RemoveAll((item) => item.clientId == clientId);
-        ApplyChanged();
-    }
-
-    private void OnClientConnected(ulong clientId)
-    {
-        if (NetworkManager.Singleton.IsServer)
+        for (int i = PlayerList.Count - 1; i >= 0; i--)
         {
-            askForMessage_ClientRpc();
+            if (PlayerList[i].clientId == clientId) PlayerList.RemoveAt(i);
         }
     }
 }

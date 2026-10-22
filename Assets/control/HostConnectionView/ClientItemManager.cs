@@ -12,7 +12,7 @@ public class ClientItemManager
     public void bind(VisualElement element)
     {
         var label = element.Q<Label>("name");
-        label.text = data.name;
+        label.text = data.name.ToString();
         var id = element.Q<Label>("id");
         id.text = data.clientId.ToString();
         var kick_btn = element.Q<Button>("kick");
