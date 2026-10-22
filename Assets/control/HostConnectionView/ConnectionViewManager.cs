@@ -23,7 +23,7 @@ public class ConnectionViewManager : NetworkBehaviour
         };
 
         PlayerListManager manager = FindObjectOfType<PlayerListManager>();
-        //°ó¶¨listview
+        //ç»‘å®šlistview
         content = ui.Q<ListView>("list");
         content.itemsSource = manager.PlayerList;
         content.makeItem = () =>
@@ -41,7 +41,7 @@ public class ConnectionViewManager : NetworkBehaviour
             if(IsServer)ui.Q<Button>("start").SetEnabled(manager.PlayerList.Count > 1);
         };
 
-        //¿ª¾ÖÊ±°ÑÉãÏñ»úÒÆ¿ª£¬·ÀÖ¹¿´µ½³¡¾°
+        //å¼€å±€æ—¶æŠŠæ‘„åƒæœºç§»å¼€ï¼Œé˜²æ­¢çœ‹åˆ°åœºæ™¯
         Camera.main.transform.position = new Vector3(10000, 0, -10);
     }
     public void ResetMap()
