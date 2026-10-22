@@ -75,3 +75,13 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 
 # End of https://www.toptal.com/developers/gitignore/api/unity
+
+# Unity UI Builder generated schema (regenerated per Unity version)
+/[Uu]IElementsSchema/
+
+# NuGet assemblies auto-restored by com.ivanmurzak.unity.mcp
+/[Aa]ssets/Plugins/NuGet/
+/[Aa]ssets/Plugins/NuGet.meta
+
+# Local MCP client config (contains personal project endpoint)
+/.vscode/mcp.json
