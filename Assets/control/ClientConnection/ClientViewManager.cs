@@ -15,6 +15,7 @@ public class ClientViewManager : MonoBehaviour
     Button okButton;
     Button quitButton;
     Label tipLabel;
+    Label portPlaceholder;
 
     UnityTransport transport;
     ushort defaultPort = 7777;
@@ -30,11 +31,14 @@ public class ClientViewManager : MonoBehaviour
         okButton = root.Q<Button>("ok");
         quitButton = root.Q<Button>("quit");
         tipLabel = root.Q<Label>("tip");
+        portPlaceholder = root.Q<Label>("portPlaceholder");
 
         transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
         // 端口留空时用场景里给 UnityTransport 配的默认端口
         defaultPort = transport.ConnectionData.Port;
         if (defaultPort == 0) defaultPort = 7777;
+        // 2022.3 的 TextField 还没有 placeholder 接口，这里用叠一层的 Label 当占位符
+        portPlaceholder.text = defaultPort.ToString();
 
         okButton.clicked += Connect;
         quitButton.clicked += () =>
@@ -72,10 +76,11 @@ public class ClientViewManager : MonoBehaviour
 
         SetFieldState(addressInputField, addressEmpty, addressOk);
         SetFieldState(portInputField, portEmpty, portOk);
+        portPlaceholder.style.display = portEmpty ? DisplayStyle.Flex : DisplayStyle.None;
 
         if (!addressEmpty && !addressOk) tipLabel.text = addressError;
         else if (!portEmpty && !portOk) tipLabel.text = portError;
-        else tipLabel.text = $"端口留空时使用默认端口 {defaultPort}";
+        else tipLabel.text = string.Empty;
 
         okButton.SetEnabled(addressOk && portOk && !connecting);
     }
