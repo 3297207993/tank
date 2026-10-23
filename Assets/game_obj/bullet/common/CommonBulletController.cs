@@ -7,6 +7,9 @@ public class CommonBulletController : NetworkBehaviour
 {
     public static float bulletSpeed = 6f;
     public static float bulletLifeTime = 30f;
+
+    //由服务器在 Spawn 之前写入，用于命中时给射手加分（只在服务器使用，不需要同步）
+    [System.NonSerialized] public ulong shooterClientId = ulong.MaxValue;
     // Start is called before the first frame update
     void Start()
     {

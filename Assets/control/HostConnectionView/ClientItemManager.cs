@@ -14,7 +14,9 @@ public class ClientItemManager
         var label = element.Q<Label>("name");
         label.text = data.name.ToString();
         var id = element.Q<Label>("id");
-        id.text = data.clientId.ToString();
+        id.text = "ID: " + data.clientId;
+        var score = element.Q<Label>("score");
+        if (score != null) score.text = "分数：" + data.score;
         var kick_btn = element.Q<Button>("kick");
         if(!NetworkManager.Singleton.IsServer)kick_btn.style.display = DisplayStyle.None;
         else if(NetworkManager.Singleton.LocalClientId == data.clientId) kick_btn.SetEnabled(false);

@@ -13,10 +13,12 @@ public class ConnectionViewManager : NetworkBehaviour
     ListView content;
     readonly List<PlayerListManager.ClientData> playerList = new List<PlayerListManager.ClientData>();
     PlayerListManager playerListManager;
+    ScoreViewManager scoreViewManager;
     public VisualTreeAsset item;
     public GameObject TopCanvas;
     void Start()
     {
+        scoreViewManager = FindObjectOfType<ScoreViewManager>();
         ui = GetComponent<UIDocument>().rootVisualElement;
         ui.Q<Button>("start").clicked += () => { startGame_ClientRpc(); };
         ui.Q<Button>("start").SetEnabled(false);
@@ -84,15 +86,17 @@ public class ConnectionViewManager : NetworkBehaviour
     }
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            Show(!ui.visible);
-        }
+        if (!Input.GetKeyDown(KeyCode.Escape)) return;
+        //Esc 统一在这里处理，避免和计分板抢同一个按键
+        if (scoreViewManager != null && scoreViewManager.IsOpen) scoreViewManager.Show(false);
+        else Show(!ui.visible);
     }
     [ClientRpc]
     public void startGame_ClientRpc()
     {
         Show(false);
+        //按“开始”视为开新一局，分数清零
+        if (IsServer) playerListManager.ClearScores();
         ResetMap();
     }
 }

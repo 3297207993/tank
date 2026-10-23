@@ -1,0 +1,15 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/control/style/DefaultStyle.uss?fileID=7433441132597879392&amp;guid=3d5dfb5a0b2695848873bbbf04fe7b19&amp;type=3#DefaultStyle" />
+    <ui:VisualElement name="root" style="flex-grow: 1; width: 100%; height: 100%; justify-content: center; align-items: center; background-color: rgba(0, 0, 0, 0.45);">
+        <ui:VisualElement name="board" style="width: 640px; max-height: 92%; padding: 20px 24px 20px 24px; border-radius: 12px; background-color: rgba(18, 20, 26, 0.92);">
+            <ui:Label tabindex="-1" text="计分板" parse-escape-sequences="true" display-tooltip-when-elided="true" name="title" style="font-size: 44px; -unity-text-align: middle-center; color: rgb(255, 210, 90); margin-bottom: 14px; -unity-font-definition: url(&quot;project://database/Assets/fonts/STKAITI%20SDF%201.asset?fileID=11400000&amp;guid=c4fb04547d834f643a761f0d0dc5170e&amp;type=2#STKAITI SDF 1&quot;);" />
+            <ui:VisualElement name="header" style="flex-direction: row; padding-left: 12px; padding-right: 16px; margin-bottom: 6px;">
+                <ui:Label tabindex="-1" text="排名" parse-escape-sequences="true" display-tooltip-when-elided="true" style="width: 90px; font-size: 24px; color: rgba(255, 255, 255, 0.55); -unity-font-definition: url(&quot;project://database/Assets/fonts/STKAITI%20SDF%201.asset?fileID=11400000&amp;guid=c4fb04547d834f643a761f0d0dc5170e&amp;type=2#STKAITI SDF 1&quot;);" />
+                <ui:Label tabindex="-1" text="玩家" parse-escape-sequences="true" display-tooltip-when-elided="true" style="flex-grow: 1; font-size: 24px; color: rgba(255, 255, 255, 0.55); -unity-font-definition: url(&quot;project://database/Assets/fonts/STKAITI%20SDF%201.asset?fileID=11400000&amp;guid=c4fb04547d834f643a761f0d0dc5170e&amp;type=2#STKAITI SDF 1&quot;);" />
+                <ui:Label tabindex="-1" text="分数" parse-escape-sequences="true" display-tooltip-when-elided="true" style="width: 120px; -unity-text-align: middle-right; font-size: 24px; color: rgba(255, 255, 255, 0.55); -unity-font-definition: url(&quot;project://database/Assets/fonts/STKAITI%20SDF%201.asset?fileID=11400000&amp;guid=c4fb04547d834f643a761f0d0dc5170e&amp;type=2#STKAITI SDF 1&quot;);" />
+            </ui:VisualElement>
+            <ui:ListView name="list" virtualization-method="DynamicHeight" style="flex-grow: 1; min-height: 220px; max-height: 520px;" />
+            <ui:Button text="返回" parse-escape-sequences="true" display-tooltip-when-elided="true" name="close" style="align-self: center; width: 160px; margin-top: 18px; font-size: 28px; -unity-font-definition: url(&quot;project://database/Assets/fonts/STKAITI%20SDF%201.asset?fileID=11400000&amp;guid=c4fb04547d834f643a761f0d0dc5170e&amp;type=2#STKAITI SDF 1&quot;);" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

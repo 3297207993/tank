@@ -85,6 +85,8 @@ public class TankController : NetworkBehaviour
             GetComponent<Collider2D>().Raycast(turret.transform.up, hits);
             var hit = hits[0];
             var obj = Instantiate(bullet, turret.transform.position + turret.transform.up * Mathf.Min(hit.distance, 1.2f), turret.transform.rotation);
+            //记录射手，命中时用于加分
+            obj.GetComponent<CommonBulletController>().shooterClientId = OwnerClientId;
             obj.GetComponent<NetworkObject>().Spawn(true);
             bulletCount.Value -= 1;
             Invoke(nameof(bulletCountAdd), CommonBulletController.bulletLifeTime);
@@ -115,13 +117,23 @@ public class TankController : NetworkBehaviour
         {
             if (IsServer)
             {
+                //给击中自己的玩家加一分（自己打中自己不算分）
+                var bulletController = collision.gameObject.GetComponent<CommonBulletController>();
+                if (bulletController != null
+                    && bulletController.shooterClientId != ulong.MaxValue
+                    && bulletController.shooterClientId != OwnerClientId)
+                {
+                    var playerListManager = FindObjectOfType<PlayerListManager>();
+                    if (playerListManager != null) playerListManager.AddScore(bulletController.shooterClientId);
+                }
+
                 if (GameObject.FindGameObjectsWithTag("Tank").Length <= 2)
                 {
                     MapGenerator gen = FindObjectOfType<MapGenerator>();
                     gen.ResetAndGenerateLater(2.0f);
                 }
                 showDestroyEffect_ClientRpc();
-                gameObject.GetComponent<NetworkObject>().Despawn(true); 
+                gameObject.GetComponent<NetworkObject>().Despawn(true);
             }
         }
     }

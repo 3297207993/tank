@@ -63,6 +63,37 @@ public class PlayerListManager:NetworkBehaviour
         SetName(rpcParams.Receive.SenderClientId, name);
     }
 
+    /// <summary>
+    /// 给指定玩家加分。只能由服务器调用，NetworkList 会自动同步给所有客户端。
+    /// </summary>
+    public void AddScore(ulong clientId, int amount = 1)
+    {
+        if (!IsServer) return;
+        for (int i = 0; i < PlayerList.Count; i++)
+        {
+            if (PlayerList[i].clientId != clientId) continue;
+            var data = PlayerList[i];
+            data.score += amount;
+            PlayerList[i] = data;
+            return;
+        }
+    }
+
+    /// <summary>
+    /// 清空所有玩家的分数（开始新一局时调用）。
+    /// </summary>
+    public void ClearScores()
+    {
+        if (!IsServer) return;
+        for (int i = 0; i < PlayerList.Count; i++)
+        {
+            var data = PlayerList[i];
+            if (data.score == 0) continue;
+            data.score = 0;
+            PlayerList[i] = data;
+        }
+    }
+
     void SetName(ulong clientId, FixedString64Bytes name)
     {
         for (int i = 0; i < PlayerList.Count; i++)
