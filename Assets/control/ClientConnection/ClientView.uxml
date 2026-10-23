@@ -1,9 +1,10 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/control/style/TankTheme.uss?fileID=7433441132597879392&amp;guid=e133886d60d50244fbbda625fd5e2c51&amp;type=3#TankTheme" />
     <Style src="project://database/Assets/control/ClientConnection/ClientView.uss?fileID=7433441132597879392&amp;guid=107934d240528d945a2304b064bc3c18&amp;type=3#ClientView" />
-    <ui:VisualElement name="root" class="root">
-        <ui:VisualElement name="card" class="card">
-            <ui:Label tabindex="-1" class="title" text="加入房间" parse-escape-sequences="true" />
-            <ui:Label tabindex="-1" class="subtitle" text="填入房主分享的地址与端口" parse-escape-sequences="true" />
+    <ui:VisualElement name="root" class="root tk-root">
+        <ui:VisualElement name="card" class="card tk-card">
+            <ui:Label tabindex="-1" class="title tk-title" text="加入房间" parse-escape-sequences="true" />
+            <ui:Label tabindex="-1" class="subtitle tk-subtitle" text="填入房主分享的地址与端口" parse-escape-sequences="true" />
             <ui:VisualElement class="row">
                 <ui:Label tabindex="-1" class="field-label" text="名字" parse-escape-sequences="true" />
                 <ui:TextField picking-mode="Ignore" usage-hints="None" is-delayed="false" max-length="-1" hide-mobile-input="false" name="name" class="field" />
@@ -20,8 +21,8 @@
             </ui:VisualElement>
             <ui:Label tabindex="-1" class="tip" name="tip" text="" parse-escape-sequences="true" />
             <ui:VisualElement class="actions">
-                <ui:Button class="btn btn-primary" name="ok" text="确定" parse-escape-sequences="true" />
-                <ui:Button class="btn btn-ghost" name="quit" text="退出" parse-escape-sequences="true" />
+                <ui:Button class="btn btn-primary tk-btn tk-btn--primary" name="ok" text="确定" parse-escape-sequences="true" />
+                <ui:Button class="btn btn-ghost tk-btn tk-btn--ghost" name="quit" text="退出" parse-escape-sequences="true" />
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>

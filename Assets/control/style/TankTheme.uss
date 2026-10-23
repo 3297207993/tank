@@ -1,0 +1,122 @@
+/*
+ * 全局视觉样式：深蓝面板 + 暖白文字 + 琥珀强调色。
+ * 各界面只保留自己的布局参数（尺寸、间距），外观都从这里来。
+ */
+
+.tk-root {
+    flex-grow: 1;
+    align-items: center;
+    justify-content: center;
+    -unity-font-definition: url("project://database/Assets/fonts/STKAITI%20SDF%201.asset?fileID=11400000&guid=c4fb04547d834f643a761f0d0dc5170e&type=2");
+}
+
+/* 深色卡片表面，尺寸/内边距由各界面自己定 */
+.tk-card {
+    flex-shrink: 0;
+    align-items: stretch;
+    background-color: rgba(13, 23, 39, 0.82);
+    border-radius: 18px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.10);
+}
+
+.tk-title {
+    flex-shrink: 0;
+    font-size: 44px;
+    color: rgb(244, 239, 228);
+}
+
+.tk-subtitle {
+    flex-shrink: 0;
+    font-size: 19px;
+    color: rgba(244, 239, 228, 0.55);
+}
+
+/* 全屏背景遮罩，大厅这类盖住整个画面的界面用 */
+.tk-scrim {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(20, 33, 55, 1);
+}
+
+.tk-row {
+    flex-shrink: 0;
+    flex-direction: row;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+}
+
+/* 按钮：宽度由使用方指定 */
+.tk-btn {
+    flex-shrink: 0;
+    height: 52px;
+    margin: 0;
+    padding: 0;
+    border-radius: 10px;
+    border-width: 1px;
+    font-size: 29px;
+    -unity-text-align: middle-center;
+    transition-property: background-color, border-color, color;
+    transition-duration: 0.12s;
+}
+
+.tk-btn--primary {
+    background-color: rgb(242, 181, 68);
+    color: rgb(38, 32, 22);
+    border-color: rgba(255, 214, 140, 0.85);
+}
+
+.tk-btn--primary:hover {
+    background-color: rgb(250, 193, 88);
+}
+
+.tk-btn--primary:active {
+    background-color: rgb(214, 155, 50);
+}
+
+.tk-btn--primary:disabled {
+    background-color: rgba(255, 255, 255, 0.06);
+    color: rgba(244, 239, 228, 0.30);
+    border-color: rgba(255, 255, 255, 0.10);
+}
+
+.tk-btn--ghost {
+    background-color: rgba(255, 255, 255, 0.04);
+    color: rgba(244, 239, 228, 0.90);
+    border-color: rgba(255, 255, 255, 0.22);
+}
+
+.tk-btn--ghost:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+}
+
+.tk-btn--ghost:active {
+    background-color: rgba(255, 255, 255, 0.20);
+}
+
+/* 危险操作（踢人）：平时只有红字红边，悬停才填红 */
+.tk-btn--danger {
+    background-color: rgba(213, 0, 2, 0.10);
+    color: rgb(240, 138, 118);
+    border-color: rgba(240, 138, 118, 0.45);
+}
+
+.tk-btn--danger:hover {
+    background-color: rgba(213, 0, 2, 0.85);
+    color: rgb(255, 245, 240);
+    border-color: rgba(255, 160, 140, 0.9);
+}
+
+.tk-btn--danger:active {
+    background-color: rgba(170, 0, 2, 1);
+}
+
+.tk-btn--danger:disabled {
+    background-color: rgba(255, 255, 255, 0.04);
+    color: rgba(244, 239, 228, 0.22);
+    border-color: rgba(255, 255, 255, 0.08);
+}
