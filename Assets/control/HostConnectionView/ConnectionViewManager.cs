@@ -11,6 +11,9 @@ public class ConnectionViewManager : NetworkBehaviour
     // Start is called before the first frame update
     VisualElement ui;
     ListView content;
+    Button startButton;
+    Label countLabel;
+    Label hintLabel;
     readonly List<PlayerListManager.ClientData> playerList = new List<PlayerListManager.ClientData>();
     PlayerListManager playerListManager;
     ScoreViewManager scoreViewManager;
@@ -20,8 +23,11 @@ public class ConnectionViewManager : NetworkBehaviour
     {
         scoreViewManager = FindObjectOfType<ScoreViewManager>();
         ui = GetComponent<UIDocument>().rootVisualElement;
-        ui.Q<Button>("start").clicked += () => { startGame_ClientRpc(); };
-        ui.Q<Button>("start").SetEnabled(false);
+        startButton = ui.Q<Button>("start");
+        countLabel = ui.Q<Label>("count");
+        hintLabel = ui.Q<Label>("hint");
+        startButton.clicked += () => { startGame_ClientRpc(); };
+        startButton.SetEnabled(false);
         ui.Q<Button>("quit").clicked += () => { 
             SceneManager.LoadScene("start"); 
         };
@@ -33,6 +39,15 @@ public class ConnectionViewManager : NetworkBehaviour
         content.makeItem = () =>
         {
             var newListInstance = item.Instantiate();
+            //元素会被 ListView 复用，点击回调只注册一次；目标玩家从 userData 里取，避免反复 bind 后重复触发
+            var kickButton = newListInstance.Q<Button>("kick");
+            kickButton.clicked += () =>
+            {
+                if (!NetworkManager.Singleton.IsServer) return;
+                if (kickButton.userData is not PlayerListManager.ClientData target) return;
+                if (NetworkManager.Singleton.LocalClientId == target.clientId) return;
+                NetworkManager.Singleton.DisconnectClient(target.clientId);
+            };
             return newListInstance;
         };
         content.bindItem = (VisualElement element, int index) =>
@@ -69,7 +84,17 @@ public class ConnectionViewManager : NetworkBehaviour
         playerList.Clear();
         foreach (var data in playerListManager.PlayerList) playerList.Add(data);
         content.RefreshItems();
-        if (IsServer) ui.Q<Button>("start").SetEnabled(playerList.Count > 1);
+
+        var count = playerList.Count;
+        var ready = count > 1;
+        if (countLabel != null) countLabel.text = $"{count} 名玩家";
+        if (hintLabel != null)
+        {
+            if (ready) hintLabel.text = IsServer ? "人都到齐了，可以开始" : "等待房主开始游戏";
+            else hintLabel.text = "等待其他玩家加入，至少 2 人即可开始";
+            hintLabel.EnableInClassList("lobby-hint--ready", ready);
+        }
+        if (IsServer) startButton.SetEnabled(ready);
     }
     public void ResetMap()
     {

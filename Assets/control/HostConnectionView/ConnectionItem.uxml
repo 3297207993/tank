@@ -1,15 +1,13 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
-    <Style src="project://database/Assets/control/style/DefaultStyle.uss?fileID=7433441132597879392&amp;guid=3d5dfb5a0b2695848873bbbf04fe7b19&amp;type=3#DefaultStyle" />
-    <ui:VisualElement style="flex-grow: 1; flex-direction: row; min-height: auto; height: auto; background-color: rgba(0, 0, 0, 0.51);">
-        <ui:VisualElement style="flex-grow: 1; flex-direction: column; min-height: auto;">
-            <ui:Label tabindex="-1" text="name" parse-escape-sequences="true" display-tooltip-when-elided="true" name="name" style="font-size: 30px; -unity-text-align: upper-left; -unity-font-definition: url(&quot;project://database/Assets/fonts/STKAITI%20SDF%201.asset?fileID=11400000&amp;guid=c4fb04547d834f643a761f0d0dc5170e&amp;type=2#STKAITI SDF 1&quot;);" />
-            <ui:VisualElement style="flex-direction: row;">
-                <ui:Label tabindex="-1" text="id" parse-escape-sequences="true" display-tooltip-when-elided="true" name="id" style="-unity-font-definition: url(&quot;project://database/Assets/fonts/STKAITI%20SDF%201.asset?fileID=11400000&amp;guid=c4fb04547d834f643a761f0d0dc5170e&amp;type=2#STKAITI SDF 1&quot;);" />
-                <ui:Label tabindex="-1" text="分数：0" parse-escape-sequences="true" display-tooltip-when-elided="true" name="score" style="margin-left: 24px; color: rgb(255, 210, 90); -unity-font-definition: url(&quot;project://database/Assets/fonts/STKAITI%20SDF%201.asset?fileID=11400000&amp;guid=c4fb04547d834f643a761f0d0dc5170e&amp;type=2#STKAITI SDF 1&quot;);" />
-            </ui:VisualElement>
+    <Style src="project://database/Assets/control/style/TankTheme.uss?fileID=7433441132597879392&amp;guid=e133886d60d50244fbbda625fd5e2c51&amp;type=3#TankTheme" />
+    <Style src="project://database/Assets/control/HostConnectionView/ConnectionView.uss?fileID=7433441132597879392&amp;guid=7317b90bd147d9c4ab7b548591479891&amp;type=3#ConnectionView" />
+    <ui:VisualElement name="row" class="player-row">
+        <ui:VisualElement class="col-name player-main">
+            <ui:Label tabindex="-1" name="name" class="player-name" text="玩家" parse-escape-sequences="true" display-tooltip-when-elided="true" />
+            <ui:Label tabindex="-1" name="role" class="player-role is-hidden" text="" parse-escape-sequences="true" />
         </ui:VisualElement>
-        <ui:VisualElement style="flex-grow: 1; flex-direction: row; justify-content: flex-end; align-items: center;">
-            <ui:Button text="踢出" parse-escape-sequences="true" display-tooltip-when-elided="true" name="kick" style="background-color: rgb(213, 0, 2); -unity-font-definition: url(&quot;project://database/Assets/fonts/STKAITI%20SDF%201.asset?fileID=11400000&amp;guid=c4fb04547d834f643a761f0d0dc5170e&amp;type=2#STKAITI SDF 1&quot;);" />
-        </ui:VisualElement>
+        <ui:Label tabindex="-1" name="id" class="col-id player-id" text="ID: 0" parse-escape-sequences="true" />
+        <ui:Label tabindex="-1" name="score" class="col-score player-score" text="0" parse-escape-sequences="true" />
+        <ui:Button class="tk-btn tk-btn--danger col-kick player-kick" name="kick" text="踢出" parse-escape-sequences="true" />
     </ui:VisualElement>
 </ui:UXML>

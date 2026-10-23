@@ -1,10 +1,25 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
-    <Style src="project://database/Assets/control/style/DefaultStyle.uss?fileID=7433441132597879392&amp;guid=3d5dfb5a0b2695848873bbbf04fe7b19&amp;type=3#DefaultStyle" />
-    <ui:VisualElement name="VisualElement" style="flex-grow: 1; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.12); max-width: 1000px; position: relative; top: auto; left: auto; align-items: stretch; justify-content: flex-start; align-self: center; max-height: 100%;">
-        <ui:ListView name="list" virtualization-method="DynamicHeight" style="flex-grow: 20;" />
-        <ui:VisualElement style="flex-grow: 1; flex-direction: row; align-items: center; justify-content: center; margin-right: 0; margin-bottom: 0;">
-            <ui:Button text="开始" parse-escape-sequences="true" display-tooltip-when-elided="true" name="start" style="margin-right: 100px; padding-right: 10px; width: 100px; font-size: 32px; -unity-font-definition: url(&quot;project://database/Assets/fonts/STKAITI%20SDF%201.asset?fileID=11400000&amp;guid=c4fb04547d834f643a761f0d0dc5170e&amp;type=2#STKAITI SDF 1&quot;); -unity-font: url(&quot;project://database/Assets/fonts/STKAITI.TTF?fileID=12800000&amp;guid=2e3c772d799af684db5990564e924572&amp;type=3#STKAITI&quot;);" />
-            <ui:Button text="退出" parse-escape-sequences="true" display-tooltip-when-elided="true" name="quit" style="position: relative; margin-left: 100px; width: 100px; font-size: 32px; -unity-font-definition: url(&quot;project://database/Assets/fonts/STKAITI%20SDF%201.asset?fileID=11400000&amp;guid=c4fb04547d834f643a761f0d0dc5170e&amp;type=2#STKAITI SDF 1&quot;); -unity-font: url(&quot;project://database/Assets/fonts/STKAITI.TTF?fileID=12800000&amp;guid=2e3c772d799af684db5990564e924572&amp;type=3#STKAITI&quot;);" />
+    <Style src="project://database/Assets/control/style/TankTheme.uss?fileID=7433441132597879392&amp;guid=e133886d60d50244fbbda625fd5e2c51&amp;type=3#TankTheme" />
+    <Style src="project://database/Assets/control/HostConnectionView/ConnectionView.uss?fileID=7433441132597879392&amp;guid=7317b90bd147d9c4ab7b548591479891&amp;type=3#ConnectionView" />
+    <ui:VisualElement name="root" class="root tk-root lobby-screen">
+        <ui:VisualElement name="card" class="tk-card lobby-card">
+            <ui:VisualElement class="lobby-head">
+                <ui:Label tabindex="-1" class="tk-title" text="房间大厅" parse-escape-sequences="true" />
+                <ui:Label tabindex="-1" name="count" class="player-count" text="1 名玩家" parse-escape-sequences="true" />
+            </ui:VisualElement>
+            <ui:Label tabindex="-1" class="tk-subtitle lobby-subtitle" text="把地址分享给朋友，人到齐后开始对局" parse-escape-sequences="true" />
+            <ui:VisualElement class="list-head">
+                <ui:Label tabindex="-1" class="head-cell col-name" text="玩家" parse-escape-sequences="true" />
+                <ui:Label tabindex="-1" class="head-cell col-id" text="ID" parse-escape-sequences="true" />
+                <ui:Label tabindex="-1" class="head-cell col-score" text="分数" parse-escape-sequences="true" />
+                <ui:Label tabindex="-1" class="head-cell col-kick" text="" parse-escape-sequences="true" />
+            </ui:VisualElement>
+            <ui:ListView name="list" class="lobby-list" virtualization-method="DynamicHeight" />
+            <ui:Label tabindex="-1" name="hint" class="lobby-hint" text="等待其他玩家加入，至少 2 人即可开始" parse-escape-sequences="true" />
+            <ui:VisualElement class="lobby-actions">
+                <ui:Button class="tk-btn tk-btn--ghost lobby-btn" name="quit" text="退出" parse-escape-sequences="true" />
+                <ui:Button class="tk-btn tk-btn--primary lobby-btn" name="start" text="开始" parse-escape-sequences="true" />
+            </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

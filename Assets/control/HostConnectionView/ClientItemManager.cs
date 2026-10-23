@@ -16,17 +16,25 @@ public class ClientItemManager
         var id = element.Q<Label>("id");
         id.text = "ID: " + data.clientId;
         var score = element.Q<Label>("score");
-        if (score != null) score.text = "分数：" + data.score;
+        if (score != null) score.text = data.score.ToString();
+
+        var localId = NetworkManager.Singleton.LocalClientId;
+        var isLocal = localId == data.clientId;
+        var isHost = data.clientId == NetworkManager.ServerClientId;
+
+        element.Q<VisualElement>("row").EnableInClassList("player-row--local", isLocal);
+
+        var role = element.Q<Label>("role");
+        if (role != null)
+        {
+            role.text = isHost ? "房主" : (isLocal ? "你" : "");
+            role.EnableInClassList("is-hidden", role.text.Length == 0);
+        }
+
+        // 点击回调在 makeItem 里只注册一次，这里只负责同步按钮状态和当前玩家数据
         var kick_btn = element.Q<Button>("kick");
-        if(!NetworkManager.Singleton.IsServer)kick_btn.style.display = DisplayStyle.None;
-        else if(NetworkManager.Singleton.LocalClientId == data.clientId) kick_btn.SetEnabled(false);
-        kick_btn.clicked += () =>
-            {
-                if (NetworkManager.Singleton.IsServer)
-                {
-                    if (NetworkManager.Singleton.LocalClientId != data.clientId)
-                        NetworkManager.Singleton.DisconnectClient(data.clientId);
-                }
-            };
+        kick_btn.userData = data;
+        kick_btn.style.display = NetworkManager.Singleton.IsServer ? DisplayStyle.Flex : DisplayStyle.None;
+        kick_btn.SetEnabled(!isLocal);
     }
 }
