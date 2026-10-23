@@ -1,0 +1,13 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/control/style/TankTheme.uss?fileID=7433441132597879392&amp;guid=e133886d60d50244fbbda625fd5e2c51&amp;type=3#TankTheme" />
+    <Style src="project://database/Assets/control/StartScene/StartView.uss?fileID=7433441132597879392&amp;guid=c4b55343b5f841f489de10b656fe3dc0&amp;type=3#StartView" />
+    <ui:VisualElement name="root" class="tk-root start-screen">
+        <ui:VisualElement name="card" class="tk-card start-card">
+            <ui:Label tabindex="-1" class="start-title" text="坦克大战" parse-escape-sequences="true" />
+            <ui:Label tabindex="-1" class="tk-subtitle start-subtitle" text="和朋友来一场坦克对战" parse-escape-sequences="true" />
+            <ui:Button class="tk-btn tk-btn--primary start-btn" name="newRoom" text="开房间" parse-escape-sequences="true" />
+            <ui:Button class="tk-btn tk-btn--ghost start-btn" name="joinRoom" text="加入房间" parse-escape-sequences="true" />
+            <ui:Button class="tk-btn tk-btn--ghost start-quit" name="quit" text="退出" parse-escape-sequences="true" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

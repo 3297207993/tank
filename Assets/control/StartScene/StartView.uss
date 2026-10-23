@@ -1,0 +1,35 @@
+/* 开始菜单：居中的竖排卡片 */
+
+.start-card {
+    width: 520px;
+    margin: 24px;
+    padding: 52px 56px 36px 56px;
+    align-items: center;
+}
+
+.start-title {
+    flex-shrink: 0;
+    font-size: 68px;
+    color: rgb(244, 239, 228);
+    -unity-text-align: middle-center;
+}
+
+.start-subtitle {
+    margin-top: 12px;
+    margin-bottom: 44px;
+    -unity-text-align: middle-center;
+}
+
+.start-btn {
+    width: 300px;
+    height: 56px;
+    font-size: 30px;
+    margin-bottom: 16px;
+}
+
+.start-quit {
+    width: 120px;
+    height: 40px;
+    font-size: 22px;
+    margin-top: 14px;
+}
