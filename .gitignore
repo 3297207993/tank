@@ -83,5 +83,4 @@ crashlytics-build.properties
 /[Aa]ssets/Plugins/NuGet/
 /[Aa]ssets/Plugins/NuGet.meta
 
-# Local MCP client config (contains personal project endpoint)
-/.vscode/mcp.json
+.mcp.json
