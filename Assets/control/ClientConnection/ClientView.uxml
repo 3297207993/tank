@@ -1,26 +1,28 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
-    <Style src="project://database/Assets/control/style/DefaultStyle.uss?fileID=7433441132597879392&amp;guid=3d5dfb5a0b2695848873bbbf04fe7b19&amp;type=3#DefaultStyle" />
-    <ui:VisualElement focusable="false" name="VisualElement" style="flex-grow: 1; align-items: center; justify-content: center; align-self: auto;">
-        <ui:VisualElement style="flex-grow: 2; align-items: center; justify-content: center;">
-            <ui:VisualElement name="VisualElement" style="flex-grow: 0; flex-direction: row;">
-                <ui:Label tabindex="-1" text="名字" parse-escape-sequences="true" display-tooltip-when-elided="true" style="font-size: 30px; flex-grow: 1; -unity-font-definition: url(&quot;project://database/Assets/fonts/STKAITI%20SDF%201.asset?fileID=11400000&amp;guid=c4fb04547d834f643a761f0d0dc5170e&amp;type=2#STKAITI SDF 1&quot;);" />
-                <ui:TextField picking-mode="Ignore" usage-hints="None" is-delayed="false" max-length="-1" hide-mobile-input="false" name="name" style="justify-content: flex-start; align-self: auto; height: 54px; width: 473px; font-size: 30px; flex-grow: 10; -unity-font-definition: url(&quot;project://database/Assets/fonts/STKAITI%20SDF%201.asset?fileID=11400000&amp;guid=c4fb04547d834f643a761f0d0dc5170e&amp;type=2#STKAITI SDF 1&quot;);" />
+    <Style src="project://database/Assets/control/ClientConnection/ClientView.uss?fileID=7433441132597879392&amp;guid=107934d240528d945a2304b064bc3c18&amp;type=3#ClientView" />
+    <ui:VisualElement name="root" class="root">
+        <ui:VisualElement name="card" class="card">
+            <ui:Label tabindex="-1" class="title" text="加入房间" parse-escape-sequences="true" />
+            <ui:Label tabindex="-1" class="subtitle" text="填入房主分享的地址与端口" parse-escape-sequences="true" />
+            <ui:VisualElement class="row">
+                <ui:Label tabindex="-1" class="field-label" text="名字" parse-escape-sequences="true" />
+                <ui:TextField picking-mode="Ignore" usage-hints="None" is-delayed="false" max-length="-1" hide-mobile-input="false" name="name" class="field" />
             </ui:VisualElement>
-            <ui:VisualElement style="flex-grow: 0; flex-direction: row; width: 100%;">
-                <ui:Label tabindex="-1" text="地址" parse-escape-sequences="true" display-tooltip-when-elided="true" style="font-size: 30px; flex-grow: 1; -unity-font-definition: url(&quot;project://database/Assets/fonts/STKAITI%20SDF%201.asset?fileID=11400000&amp;guid=c4fb04547d834f643a761f0d0dc5170e&amp;type=2#STKAITI SDF 1&quot;);" />
-                <ui:TextField picking-mode="Ignore" usage-hints="None" is-delayed="false" max-length="-1" hide-mobile-input="false" name="address" style="justify-content: flex-start; align-self: auto; height: 54px; width: 473px; font-size: 30px; flex-direction: row; -unity-font-definition: url(&quot;project://database/Assets/fonts/STKAITI%20SDF%201.asset?fileID=11400000&amp;guid=c4fb04547d834f643a761f0d0dc5170e&amp;type=2#STKAITI SDF 1&quot;);" />
+            <ui:VisualElement class="row">
+                <ui:Label tabindex="-1" class="field-label" text="地址" parse-escape-sequences="true" />
+                <ui:TextField picking-mode="Ignore" usage-hints="None" is-delayed="false" max-length="-1" hide-mobile-input="false" name="address" class="field" />
             </ui:VisualElement>
-            <ui:VisualElement style="flex-grow: 0; flex-direction: row; width: 100%;">
-                <ui:Label tabindex="-1" text="端口" parse-escape-sequences="true" display-tooltip-when-elided="true" style="font-size: 30px; flex-grow: 1; -unity-font-definition: url(&quot;project://database/Assets/fonts/STKAITI%20SDF%201.asset?fileID=11400000&amp;guid=c4fb04547d834f643a761f0d0dc5170e&amp;type=2#STKAITI SDF 1&quot;);" />
-                <ui:TextField picking-mode="Ignore" usage-hints="None" is-delayed="false" max-length="-1" hide-mobile-input="false" name="port" style="justify-content: flex-start; align-self: auto; height: 54px; width: 473px; font-size: 30px; flex-direction: row; -unity-font-definition: url(&quot;project://database/Assets/fonts/STKAITI%20SDF%201.asset?fileID=11400000&amp;guid=c4fb04547d834f643a761f0d0dc5170e&amp;type=2#STKAITI SDF 1&quot;);">
-                    <ui:Label tabindex="-1" name="portPlaceholder" text="7777" picking-mode="Ignore" parse-escape-sequences="true" style="position: absolute; left: 11px; top: 0; bottom: 0; -unity-text-align: middle-left; font-size: 30px; color: rgba(128, 128, 128, 0.7); -unity-font-definition: url(&quot;project://database/Assets/fonts/STKAITI%20SDF%201.asset?fileID=11400000&amp;guid=c4fb04547d834f643a761f0d0dc5170e&amp;type=2#STKAITI SDF 1&quot;);" />
+            <ui:VisualElement class="row">
+                <ui:Label tabindex="-1" class="field-label" text="端口" parse-escape-sequences="true" />
+                <ui:TextField picking-mode="Ignore" usage-hints="None" is-delayed="false" max-length="-1" hide-mobile-input="false" name="port" class="field">
+                    <ui:Label tabindex="-1" name="portPlaceholder" class="placeholder" text="7777" picking-mode="Ignore" parse-escape-sequences="true" />
                 </ui:TextField>
             </ui:VisualElement>
-            <ui:Label tabindex="-1" name="tip" text="" parse-escape-sequences="true" display-tooltip-when-elided="true" style="font-size: 20px; color: rgba(255, 255, 255, 0.85); -unity-font-definition: url(&quot;project://database/Assets/fonts/STKAITI%20SDF%201.asset?fileID=11400000&amp;guid=c4fb04547d834f643a761f0d0dc5170e&amp;type=2#STKAITI SDF 1&quot;);" />
-        </ui:VisualElement>
-        <ui:VisualElement style="flex-grow: 1; flex-direction: row; align-items: center; justify-content: center; height: auto; width: auto; flex-basis: auto;">
-            <ui:Button text="确定" parse-escape-sequences="true" display-tooltip-when-elided="true" name="ok" style="margin-right: 100px; -unity-font-definition: url(&quot;project://database/Assets/fonts/STKAITI%20SDF%201.asset?fileID=11400000&amp;guid=c4fb04547d834f643a761f0d0dc5170e&amp;type=2#STKAITI SDF 1&quot;);" />
-            <ui:Button text="退出" parse-escape-sequences="true" display-tooltip-when-elided="true" name="quit" style="-unity-font-definition: url(&quot;project://database/Assets/fonts/STKAITI%20SDF%201.asset?fileID=11400000&amp;guid=c4fb04547d834f643a761f0d0dc5170e&amp;type=2#STKAITI SDF 1&quot;);" />
+            <ui:Label tabindex="-1" class="tip" name="tip" text="" parse-escape-sequences="true" />
+            <ui:VisualElement class="actions">
+                <ui:Button class="btn btn-primary" name="ok" text="确定" parse-escape-sequences="true" />
+                <ui:Button class="btn btn-ghost" name="quit" text="退出" parse-escape-sequences="true" />
+            </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

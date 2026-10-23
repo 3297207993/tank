@@ -1,0 +1,149 @@
+.root {
+    flex-grow: 1;
+    align-items: center;
+    justify-content: center;
+    -unity-font-definition: url("project://database/Assets/fonts/STKAITI%20SDF%201.asset?fileID=11400000&guid=c4fb04547d834f643a761f0d0dc5170e&type=2");
+}
+
+.card {
+    width: 640px;
+    margin: 24px;
+    padding: 34px 44px 30px 44px;
+    background-color: rgba(13, 23, 39, 0.82);
+    border-radius: 18px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.10);
+    align-items: stretch;
+}
+
+.title {
+    font-size: 44px;
+    color: rgb(244, 239, 228);
+    margin-bottom: 4px;
+}
+
+.subtitle {
+    font-size: 19px;
+    color: rgba(244, 239, 228, 0.55);
+    margin-bottom: 24px;
+}
+
+.row {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.field-label {
+    width: 84px;
+    font-size: 28px;
+    color: rgba(244, 239, 228, 0.85);
+    -unity-text-align: middle-right;
+    margin-right: 18px;
+}
+
+.field {
+    flex-grow: 1;
+    height: 52px;
+    margin: 0;
+    padding-left: 12px;
+    padding-right: 12px;
+    font-size: 26px;
+    color: rgb(32, 36, 42);
+    background-color: rgb(245, 242, 234);
+    border-radius: 9px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.10);
+}
+
+.field:hover {
+    border-color: rgba(244, 239, 228, 0.40);
+}
+
+.field:focus {
+    border-color: rgb(242, 181, 68);
+}
+
+/* 去掉运行时主题给输入区自带的底色和描边，只保留外层的圆角底色 */
+.field .unity-base-text-field__input {
+    background-color: transparent;
+    border-width: 0;
+    margin: 0;
+    padding: 0;
+}
+
+.placeholder {
+    position: absolute;
+    left: 12px;
+    top: 0;
+    bottom: 0;
+    margin: 0;
+    padding: 0;
+    -unity-text-align: middle-left;
+    font-size: 26px;
+    color: rgba(120, 124, 130, 0.75);
+}
+
+.tip {
+    height: 26px;
+    font-size: 20px;
+    color: rgba(244, 239, 228, 0.8);
+    -unity-text-align: middle-center;
+}
+
+.tip--error {
+    color: rgb(240, 138, 118);
+}
+
+.actions {
+    flex-direction: row;
+    justify-content: center;
+    margin-top: 18px;
+}
+
+.btn {
+    width: 160px;
+    height: 52px;
+    margin: 0 13px;
+    padding: 0;
+    border-radius: 10px;
+    border-width: 1px;
+    font-size: 29px;
+    -unity-text-align: middle-center;
+    transition-property: background-color, border-color, color;
+    transition-duration: 0.12s;
+}
+
+.btn-primary {
+    background-color: rgb(242, 181, 68);
+    color: rgb(38, 32, 22);
+    border-color: rgba(255, 214, 140, 0.85);
+}
+
+.btn-primary:hover {
+    background-color: rgb(250, 193, 88);
+}
+
+.btn-primary:active {
+    background-color: rgb(214, 155, 50);
+}
+
+.btn-primary:disabled {
+    background-color: rgba(255, 255, 255, 0.06);
+    color: rgba(244, 239, 228, 0.30);
+    border-color: rgba(255, 255, 255, 0.10);
+}
+
+.btn-ghost {
+    background-color: rgba(255, 255, 255, 0.04);
+    color: rgba(244, 239, 228, 0.9);
+    border-color: rgba(255, 255, 255, 0.22);
+}
+
+.btn-ghost:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+}
+
+.btn-ghost:active {
+    background-color: rgba(255, 255, 255, 0.20);
+}

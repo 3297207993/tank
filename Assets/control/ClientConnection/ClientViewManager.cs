@@ -78,18 +78,39 @@ public class ClientViewManager : MonoBehaviour
         SetFieldState(portInputField, portEmpty, portOk);
         portPlaceholder.style.display = portEmpty ? DisplayStyle.Flex : DisplayStyle.None;
 
-        if (!addressEmpty && !addressOk) tipLabel.text = addressError;
-        else if (!portEmpty && !portOk) tipLabel.text = portError;
-        else tipLabel.text = string.Empty;
+        if (!addressEmpty && !addressOk) SetTip(addressError, true);
+        else if (!portEmpty && !portOk) SetTip(portError, true);
+        else SetTip(string.Empty);
 
         okButton.SetEnabled(addressOk && portOk && !connecting);
     }
 
     static void SetFieldState(TextField field, bool empty, bool valid)
     {
-        if (empty) field.style.borderBottomColor = StyleKeyword.Null;
-        else field.style.borderBottomColor = valid ? Color.green : Color.red;
+        // 没填或填对了就用样式表里的默认描边，填错了整个框变红
+        if (empty || valid)
+        {
+            field.style.borderTopColor = StyleKeyword.Null;
+            field.style.borderRightColor = StyleKeyword.Null;
+            field.style.borderBottomColor = StyleKeyword.Null;
+            field.style.borderLeftColor = StyleKeyword.Null;
+        }
+        else
+        {
+            field.style.borderTopColor = ErrorColor;
+            field.style.borderRightColor = ErrorColor;
+            field.style.borderBottomColor = ErrorColor;
+            field.style.borderLeftColor = ErrorColor;
+        }
     }
+
+    void SetTip(string text, bool isError = false)
+    {
+        tipLabel.text = text;
+        tipLabel.EnableInClassList("tip--error", isError);
+    }
+
+    static readonly Color ErrorColor = new Color(0.93f, 0.41f, 0.35f);
 
     async void Connect()
     {
@@ -97,14 +118,14 @@ public class ClientViewManager : MonoBehaviour
 
         if (!ServerAddress.TryParse(addressInputField.value, out var host, out var addressPort, out var error))
         {
-            tipLabel.text = error;
             RefreshInputState();
+            SetTip(error, true);
             return;
         }
         if (!ServerAddress.TryParsePort(portInputField.value, out var fieldPort, out error))
         {
-            tipLabel.text = error;
             RefreshInputState();
+            SetTip(error, true);
             return;
         }
 
@@ -113,7 +134,7 @@ public class ClientViewManager : MonoBehaviour
 
         connecting = true;
         RefreshInputState();
-        tipLabel.text = "正在解析地址…";
+        SetTip("正在解析地址…");
 
         try
         {
@@ -126,7 +147,7 @@ public class ClientViewManager : MonoBehaviour
                 {
                     connecting = false;
                     RefreshInputState();
-                    tipLabel.text = $"无法解析地址 {host}";
+                    SetTip($"无法解析地址 {host}", true);
                     return;
                 }
                 address = resolved;
@@ -137,12 +158,12 @@ public class ClientViewManager : MonoBehaviour
             transport.ConnectionData.Address = address;
             transport.ConnectionData.Port = port;
 
-            if (NetworkManager.Singleton.StartClient()) tipLabel.text = $"正在连接 {host}:{port}…";
+            if (NetworkManager.Singleton.StartClient()) SetTip($"正在连接 {host}:{port}…");
             else
             {
                 connecting = false;
                 RefreshInputState();
-                tipLabel.text = "连接失败，请检查地址和端口";
+                SetTip("连接失败，请检查地址和端口", true);
             }
         }
         catch (System.Exception e)
@@ -151,7 +172,7 @@ public class ClientViewManager : MonoBehaviour
             if (destroyed) return;
             connecting = false;
             RefreshInputState();
-            tipLabel.text = "连接失败，请检查地址和端口";
+            SetTip("连接失败，请检查地址和端口", true);
         }
     }
 
