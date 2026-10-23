@@ -1,6 +1,5 @@
-using System.Collections;
-using System.Collections.Generic;
 using System.Net;
+using System.Threading.Tasks;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
@@ -10,23 +9,34 @@ using UnityEngine.UIElements;
 public class ClientViewManager : MonoBehaviour
 {
     // Start is called before the first frame update
-    TextField ipInputField;
+    TextField addressInputField;
+    TextField portInputField;
     TextField nameInputField;
     Button okButton;
     Button quitButton;
+    Label tipLabel;
+
+    UnityTransport transport;
+    ushort defaultPort = 7777;
+    bool connecting;
+    bool destroyed;
+
     void Start()
     {
         var root = GetComponent<UIDocument>().rootVisualElement;
-        ipInputField = root.Q<TextField>("ip");
+        addressInputField = root.Q<TextField>("address");
+        portInputField = root.Q<TextField>("port");
         nameInputField = root.Q<TextField>("name");
         okButton = root.Q<Button>("ok");
         quitButton = root.Q<Button>("quit");
-        okButton.SetEnabled(false);
-        okButton.clicked += () =>
-        {
-            NetworkManager.Singleton.GetComponent<UnityTransport>().ConnectionData.Address = ipInputField.value;
-            NetworkManager.Singleton.StartClient();
-        };
+        tipLabel = root.Q<Label>("tip");
+
+        transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
+        // 端口留空时用场景里给 UnityTransport 配的默认端口
+        defaultPort = transport.ConnectionData.Port;
+        if (defaultPort == 0) defaultPort = 7777;
+
+        okButton.clicked += Connect;
         quitButton.clicked += () =>
         {
             NetworkManager.Singleton.Shutdown();
@@ -37,20 +47,119 @@ public class ClientViewManager : MonoBehaviour
         {
             clientName = evt.newValue;
         });
-        ipInputField.RegisterValueChangedCallback((evt) =>
+        addressInputField.RegisterValueChangedCallback((evt) =>
         {
-            if (IPAddress.TryParse(evt.newValue, out var address))
+            // 地址里自带端口（如 http://example.com:7788）时同步到端口栏，让玩家看到实际用的端口
+            if (ServerAddress.TryParse(evt.newValue, out _, out var urlPort, out _) && urlPort.HasValue)
             {
-                ipInputField.style.borderBottomColor = Color.green;
-                okButton.SetEnabled(true);
+                portInputField.SetValueWithoutNotify(urlPort.Value.ToString());
             }
-            else
-            {
-                ipInputField.style.borderBottomColor = Color.red;
-                okButton.SetEnabled(false);
-            }
+            RefreshInputState();
         });
+        portInputField.RegisterValueChangedCallback((evt) =>
+        {
+            RefreshInputState();
+        });
+        RefreshInputState();
     }
 
-    public static string clientName = "����";
+    void RefreshInputState()
+    {
+        var addressEmpty = string.IsNullOrWhiteSpace(addressInputField.value);
+        var portEmpty = string.IsNullOrWhiteSpace(portInputField.value);
+        var addressOk = ServerAddress.TryParse(addressInputField.value, out _, out _, out var addressError);
+        var portOk = ServerAddress.TryParsePort(portInputField.value, out _, out var portError);
+
+        SetFieldState(addressInputField, addressEmpty, addressOk);
+        SetFieldState(portInputField, portEmpty, portOk);
+
+        if (!addressEmpty && !addressOk) tipLabel.text = addressError;
+        else if (!portEmpty && !portOk) tipLabel.text = portError;
+        else tipLabel.text = $"端口留空时使用默认端口 {defaultPort}";
+
+        okButton.SetEnabled(addressOk && portOk && !connecting);
+    }
+
+    static void SetFieldState(TextField field, bool empty, bool valid)
+    {
+        if (empty) field.style.borderBottomColor = StyleKeyword.Null;
+        else field.style.borderBottomColor = valid ? Color.green : Color.red;
+    }
+
+    async void Connect()
+    {
+        if (connecting) return;
+
+        if (!ServerAddress.TryParse(addressInputField.value, out var host, out var addressPort, out var error))
+        {
+            tipLabel.text = error;
+            RefreshInputState();
+            return;
+        }
+        if (!ServerAddress.TryParsePort(portInputField.value, out var fieldPort, out error))
+        {
+            tipLabel.text = error;
+            RefreshInputState();
+            return;
+        }
+
+        // 端口栏 > 地址里写的端口 > 默认端口
+        var port = fieldPort ?? addressPort ?? defaultPort;
+
+        connecting = true;
+        RefreshInputState();
+        tipLabel.text = "正在解析地址…";
+
+        try
+        {
+            var address = host;
+            if (!IPAddress.TryParse(host, out _))
+            {
+                var resolved = await ResolveHostAsync(host);
+                if (destroyed) return;
+                if (resolved == null)
+                {
+                    connecting = false;
+                    RefreshInputState();
+                    tipLabel.text = $"无法解析地址 {host}";
+                    return;
+                }
+                address = resolved;
+            }
+
+            if (NetworkManager.Singleton == null) return;
+
+            transport.ConnectionData.Address = address;
+            transport.ConnectionData.Port = port;
+
+            if (NetworkManager.Singleton.StartClient()) tipLabel.text = $"正在连接 {host}:{port}…";
+            else
+            {
+                connecting = false;
+                RefreshInputState();
+                tipLabel.text = "连接失败，请检查地址和端口";
+            }
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogException(e);
+            if (destroyed) return;
+            connecting = false;
+            RefreshInputState();
+            tipLabel.text = "连接失败，请检查地址和端口";
+        }
+    }
+
+    // 放到后台线程查 DNS，避免域名解析卡住界面
+    static Task<string> ResolveHostAsync(string host)
+    {
+        return Task.Run(() => ServerAddress.Resolve(host));
+    }
+
+    void OnDestroy()
+    {
+        destroyed = true;
+    }
+
+    public static string clientName = "房主";
 }
