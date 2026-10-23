@@ -120,3 +120,31 @@
     color: rgba(244, 239, 228, 0.22);
     border-color: rgba(255, 255, 255, 0.08);
 }
+
+/* ListView / ScrollView 自带的滚动条：改成细的暖白滑块，去掉白色箭头按钮 */
+.unity-scroll-view__vertical-scroller {
+    width: 8px;
+    background-color: rgba(255, 255, 255, 0.04);
+    border-radius: 4px;
+}
+
+.unity-scroller__slider {
+    background-color: rgba(244, 239, 228, 0.28);
+    border-radius: 4px;
+}
+
+/* 主题里滑块的默认最小宽度比滚动条还宽，会露在轨道外面 */
+.unity-scroller--vertical .unity-scroller__slider {
+    width: 6px;
+    min-width: 6px;
+    max-width: 6px;
+}
+
+.unity-scroller__slider:hover {
+    background-color: rgba(244, 239, 228, 0.45);
+}
+
+.unity-scroller__low-button,
+.unity-scroller__high-button {
+    display: none;
+}

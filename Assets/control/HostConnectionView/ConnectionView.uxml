@@ -15,7 +15,7 @@
                 <ui:Label tabindex="-1" class="head-cell col-score" text="分数" parse-escape-sequences="true" />
                 <ui:Label tabindex="-1" class="head-cell col-kick" text="" parse-escape-sequences="true" />
             </ui:VisualElement>
-            <ui:ListView name="list" class="lobby-list" virtualization-method="DynamicHeight" />
+            <ui:ListView name="list" class="lobby-list" virtualization-method="FixedHeight" fixed-item-height="72" />
             <ui:Label tabindex="-1" name="hint" class="lobby-hint" text="等待其他玩家加入，至少 2 人即可开始" parse-escape-sequences="true" />
             <ui:VisualElement class="lobby-actions">
                 <ui:Button class="tk-btn tk-btn--ghost lobby-btn" name="quit" text="退出" parse-escape-sequences="true" />

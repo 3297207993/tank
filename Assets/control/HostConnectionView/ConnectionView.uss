@@ -17,6 +17,8 @@
 
 .lobby-card {
     width: 760px;
+    max-height: 92%;
+    overflow: hidden;
     margin: 24px;
     padding: 30px 36px 26px 36px;
     /* 大厅卡片用不透明底，压暗战局时文字依然清晰 */
@@ -83,10 +85,12 @@
 }
 
 .lobby-list {
-    flex-grow: 1;
-    flex-shrink: 1;
+    /* 不让列表自己撑满：ListView 的高度和可见行数会互相影响，固定以内容为准 */
+    flex-grow: 0;
+    flex-shrink: 0;
     min-height: 150px;
-    max-height: 360px;
+    /* 上限按"卡片整体不超过一屏"来定，超过就由列表内部滚动 */
+    max-height: 224px;
     margin-bottom: 8px;
 }
 

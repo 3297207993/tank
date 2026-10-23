@@ -1,0 +1,123 @@
+/* 计分板：半透明压暗战局 + 不透明卡片，列宽与行共用同一套类保证对齐 */
+
+.score-scrim {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(4, 8, 14, 0.70);
+}
+
+.score-board {
+    width: 640px;
+    max-height: 92%;
+    overflow: hidden;
+    margin: 24px;
+    padding: 28px 30px 22px 30px;
+    /* 不透明底，避免地图线条透上来影响读表 */
+    background-color: rgb(13, 23, 39);
+}
+
+.score-title {
+    margin-bottom: 2px;
+}
+
+.score-subtitle {
+    margin-bottom: 18px;
+}
+
+.score-head {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+    padding: 0 16px 8px 16px;
+    margin-bottom: 8px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 255, 255, 0.10);
+}
+
+.head-cell {
+    font-size: 20px;
+    color: rgba(244, 239, 228, 0.45);
+}
+
+/* 列宽：表头和行共用 */
+.scol-rank {
+    width: 90px;
+    flex-shrink: 0;
+    -unity-text-align: middle-center;
+}
+
+.scol-name {
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.scol-score {
+    width: 120px;
+    flex-shrink: 0;
+    -unity-text-align: middle-right;
+}
+
+.score-list {
+    /* 不让列表自己撑满：ListView 的高度和可见行数会互相影响，固定以内容为准 */
+    flex-grow: 0;
+    flex-shrink: 0;
+    min-height: 120px;
+    /* 上限按"卡片整体不超过一屏"来定，超过就由列表内部滚动 */
+    max-height: 300px;
+}
+
+/* 玩家行 */
+.score-row {
+    flex-direction: row;
+    align-items: center;
+    height: 60px;
+    flex-shrink: 0;
+    padding: 0 16px 0 16px;
+    margin-bottom: 6px;
+    border-radius: 10px;
+    background-color: rgba(255, 255, 255, 0.05);
+    transition-property: background-color;
+    transition-duration: 0.12s;
+}
+
+.score-row--local {
+    background-color: rgba(242, 181, 68, 0.16);
+}
+
+.score-rank {
+    font-size: 30px;
+    color: rgba(244, 239, 228, 0.55);
+}
+
+.rank--1 {
+    color: rgb(242, 181, 68);
+}
+
+.rank--2 {
+    color: rgb(199, 204, 214);
+}
+
+.rank--3 {
+    color: rgb(204, 140, 89);
+}
+
+.score-name {
+    font-size: 30px;
+    color: rgb(235, 235, 235);
+}
+
+.score-value {
+    font-size: 30px;
+    color: rgb(242, 181, 68);
+}
+
+.score-close {
+    width: 160px;
+    height: 46px;
+    font-size: 26px;
+    margin-top: 16px;
+    align-self: center;
+}
