@@ -7,6 +7,7 @@
 
 .card {
     width: 640px;
+    flex-shrink: 0;
     margin: 24px;
     padding: 34px 44px 30px 44px;
     background-color: rgba(13, 23, 39, 0.82);
@@ -18,12 +19,14 @@
 
 .title {
     font-size: 44px;
+    flex-shrink: 0;
     color: rgb(244, 239, 228);
     margin-bottom: 4px;
 }
 
 .subtitle {
     font-size: 19px;
+    flex-shrink: 0;
     color: rgba(244, 239, 228, 0.55);
     margin-bottom: 24px;
 }
@@ -31,11 +34,13 @@
 .row {
     flex-direction: row;
     align-items: center;
+    flex-shrink: 0;
     margin-bottom: 14px;
 }
 
 .field-label {
     width: 84px;
+    flex-shrink: 0;
     font-size: 28px;
     color: rgba(244, 239, 228, 0.85);
     -unity-text-align: middle-right;
@@ -44,6 +49,7 @@
 
 .field {
     flex-grow: 1;
+    flex-shrink: 0;
     height: 52px;
     margin: 0;
     padding-left: 12px;
@@ -86,6 +92,7 @@
 
 .tip {
     height: 26px;
+    flex-shrink: 0;
     font-size: 20px;
     color: rgba(244, 239, 228, 0.8);
     -unity-text-align: middle-center;
@@ -98,12 +105,14 @@
 .actions {
     flex-direction: row;
     justify-content: center;
+    flex-shrink: 0;
     margin-top: 18px;
 }
 
 .btn {
     width: 160px;
     height: 52px;
+    flex-shrink: 0;
     margin: 0 13px;
     padding: 0;
     border-radius: 10px;
