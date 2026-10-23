@@ -10,10 +10,12 @@ public class ConnectionViewManager : NetworkBehaviour
 {
     // Start is called before the first frame update
     VisualElement ui;
+    VisualElement scrim;
     ListView content;
     Button startButton;
     Label countLabel;
     Label hintLabel;
+    bool gameStarted;
     readonly List<PlayerListManager.ClientData> playerList = new List<PlayerListManager.ClientData>();
     PlayerListManager playerListManager;
     ScoreViewManager scoreViewManager;
@@ -23,6 +25,7 @@ public class ConnectionViewManager : NetworkBehaviour
     {
         scoreViewManager = FindObjectOfType<ScoreViewManager>();
         ui = GetComponent<UIDocument>().rootVisualElement;
+        scrim = ui.Q<VisualElement>("scrim");
         startButton = ui.Q<Button>("start");
         countLabel = ui.Q<Label>("count");
         hintLabel = ui.Q<Label>("hint");
@@ -107,6 +110,8 @@ public class ConnectionViewManager : NetworkBehaviour
     public void Show(bool show)
     {
         ui.visible = show;
+        //开局前遮住空场景（不透明蓝底），开局后压暗战局，和计分板保持一致
+        if (scrim != null) scrim.EnableInClassList("lobby-scrim--dim", show && gameStarted);
         TopCanvas.SetActive(!show);
     }
     private void Update()
@@ -119,6 +124,7 @@ public class ConnectionViewManager : NetworkBehaviour
     [ClientRpc]
     public void startGame_ClientRpc()
     {
+        gameStarted = true;
         Show(false);
         //按“开始”视为开新一局，分数清零
         if (IsServer) playerListManager.ClearScores();

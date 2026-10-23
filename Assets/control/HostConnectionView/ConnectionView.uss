@@ -1,14 +1,26 @@
 /* 房间大厅：盖住整个画面的深色底板 + 卡片 */
 
-.lobby-screen {
-    /* 用不透明底色：和开始/加入房间场景的深蓝保持一致，也不依赖半透明合成 */
+/* 整屏底色单独放一层，不画在根节点上：根节点的半透明在编辑器里合成不稳定 */
+.lobby-scrim {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
     background-color: rgb(49, 77, 121);
+}
+
+/* 开局后再打开：半透明压暗战局，能继续观察场上情况 */
+.lobby-scrim--dim {
+    background-color: rgba(6, 10, 18, 0.90);
 }
 
 .lobby-card {
     width: 760px;
     margin: 24px;
     padding: 30px 36px 26px 36px;
+    /* 大厅卡片用不透明底，压暗战局时文字依然清晰 */
+    background-color: rgb(13, 23, 39);
 }
 
 .lobby-head {

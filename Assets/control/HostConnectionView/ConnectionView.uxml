@@ -1,7 +1,8 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <Style src="project://database/Assets/control/style/TankTheme.uss?fileID=7433441132597879392&amp;guid=e133886d60d50244fbbda625fd5e2c51&amp;type=3#TankTheme" />
     <Style src="project://database/Assets/control/HostConnectionView/ConnectionView.uss?fileID=7433441132597879392&amp;guid=7317b90bd147d9c4ab7b548591479891&amp;type=3#ConnectionView" />
-    <ui:VisualElement name="root" class="root tk-root lobby-screen">
+    <ui:VisualElement name="root" class="root tk-root">
+        <ui:VisualElement name="scrim" class="lobby-scrim" picking-mode="Ignore" />
         <ui:VisualElement name="card" class="tk-card lobby-card">
             <ui:VisualElement class="lobby-head">
                 <ui:Label tabindex="-1" class="tk-title" text="房间大厅" parse-escape-sequences="true" />
