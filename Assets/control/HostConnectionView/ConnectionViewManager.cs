@@ -13,6 +13,7 @@ public class ConnectionViewManager : NetworkBehaviour
     VisualElement scrim;
     ListView content;
     Button startButton;
+    Button addBotButton;
     Label countLabel;
     Label hintLabel;
     bool gameStarted;
@@ -36,6 +37,15 @@ public class ConnectionViewManager : NetworkBehaviour
         };
 
         playerListManager = FindObjectOfType<PlayerListManager>();
+
+        addBotButton = ui.Q<Button>("addBot");
+        if (addBotButton != null)
+        {
+            addBotButton.clicked += AddBotClicked;
+            //等网络起来、确认是房主后再显示
+            addBotButton.style.display = DisplayStyle.None;
+        }
+
         //绑定listview
         content = ui.Q<ListView>("list");
         content.itemsSource = playerList;
@@ -99,6 +109,20 @@ public class ConnectionViewManager : NetworkBehaviour
         }
     }
 
+    void AddBotClicked()
+    {
+        if (!IsServer || gameStarted || playerListManager == null || !playerListManager.IsSpawned) return;
+        playerListManager.AddBot();
+    }
+
+    void RefreshAddBotButton()
+    {
+        if (addBotButton == null) return;
+        bool canAdd = IsServer && !gameStarted && playerListManager != null && playerListManager.IsSpawned;
+        addBotButton.style.display = canAdd ? DisplayStyle.Flex : DisplayStyle.None;
+        addBotButton.SetEnabled(canAdd);
+    }
+
     private void RefreshPlayerList()
     {
         playerList.Clear();
@@ -111,10 +135,11 @@ public class ConnectionViewManager : NetworkBehaviour
         if (hintLabel != null)
         {
             if (ready) hintLabel.text = IsServer ? "人都到齐了，可以开始" : "等待房主开始游戏";
-            else hintLabel.text = "等待其他玩家加入，至少 2 人即可开始";
+            else hintLabel.text = IsServer ? "等待其他玩家加入，或点“添加电脑”开始" : "等待房主开始游戏";
             hintLabel.EnableInClassList("lobby-hint--ready", ready);
         }
         if (IsServer) startButton.SetEnabled(ready);
+        RefreshAddBotButton();
     }
     public void ResetMap()
     {
@@ -130,6 +155,7 @@ public class ConnectionViewManager : NetworkBehaviour
         //开局前遮住空场景（不透明蓝底），开局后压暗战局，和计分板保持一致
         if (scrim != null) scrim.EnableInClassList("lobby-scrim--dim", show && gameStarted);
         TopCanvas.SetActive(!show);
+        RefreshAddBotButton();
     }
     private void Update()
     {

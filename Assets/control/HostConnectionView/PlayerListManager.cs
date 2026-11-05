@@ -41,7 +41,7 @@ public class PlayerListManager:NetworkBehaviour
     //电脑玩家用高位 id，避免和真实连接 id 冲突
     const ulong BotIdBase = 1UL << 63;
     int nextBotIndex;
-    [SerializeField] int botCount = 1;
+    [SerializeField] int botCount = 0;
 
     public override void OnNetworkSpawn()
     {
@@ -59,10 +59,10 @@ public class PlayerListManager:NetworkBehaviour
         }
         SetName(NetworkManager.LocalClientId, ClientViewManager.clientName);
 
-        //大厅里先补齐电脑玩家，开新一局时它们和真人一起重建坦克
+        //大厅里按需补充电脑玩家；默认 0 个，由房主在界面上添加
         for (int i = 0; i < botCount; i++)
         {
-            AddBot($"电脑 {i + 1}");
+            AddBot();
         }
     }
 
@@ -109,11 +109,20 @@ public class PlayerListManager:NetworkBehaviour
     }
 
     /// <summary>
+    /// 添加一个由服务器控制的电脑玩家，自动命名。只能由服务器调用。
+    /// </summary>
+    public ulong AddBot()
+    {
+        return AddBot(string.Empty);
+    }
+
+    /// <summary>
     /// 添加一个由服务器控制的电脑玩家。只能由服务器调用。
     /// </summary>
     public ulong AddBot(string botName)
     {
         if (!IsServer) return 0;
+        if (string.IsNullOrEmpty(botName)) botName = $"电脑 {nextBotIndex + 1}";
         ulong botId = BotIdBase + (ulong)nextBotIndex++;
         PlayerList.Add(new ClientData
         {
