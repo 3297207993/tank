@@ -49,6 +49,13 @@ public class ConnectionViewManager : NetworkBehaviour
                 if (!NetworkManager.Singleton.IsServer) return;
                 if (kickButton.userData is not PlayerListManager.ClientData target) return;
                 if (NetworkManager.Singleton.LocalClientId == target.clientId) return;
+                if (target.isBot)
+                {
+                    //电脑玩家没有真实连接，直接移除条目并清掉场上坦克
+                    RemoveBotTank(target.clientId);
+                    playerListManager.RemoveBot(target.clientId);
+                    return;
+                }
                 NetworkManager.Singleton.DisconnectClient(target.clientId);
             };
             return newListInstance;
@@ -80,6 +87,16 @@ public class ConnectionViewManager : NetworkBehaviour
     {
         yield return new WaitUntil(() => playerListManager.IsSpawned);
         RefreshPlayerList();
+    }
+
+    void RemoveBotTank(ulong botId)
+    {
+        foreach (var tank in FindObjectsOfType<TankController>())
+        {
+            if (!tank.isBot || tank.playerId != botId) continue;
+            tank.GetComponent<NetworkObject>().Despawn(true);
+            return;
+        }
     }
 
     private void RefreshPlayerList()

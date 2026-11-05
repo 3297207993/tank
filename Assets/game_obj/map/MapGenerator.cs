@@ -6,7 +6,7 @@ using Unity.Netcode;
 using UnityEngine;
 
 
-//×¢Òâ£¬Ö»ÓĞ·şÎñÆ÷¿ÉÒÔµ÷ÓÃÕâ¸ö½Å±¾ÀïµÄ·½·¨
+//æ³¨æ„ï¼Œåªæœ‰æœåŠ¡å™¨å¯ä»¥è°ƒç”¨è¿™ä¸ªè„šæœ¬é‡Œçš„æ–¹æ³•
 public class MapGenerator : NetworkBehaviour
 {
     Vector2Int mapSize = new Vector2Int(100, 100);
@@ -16,9 +16,16 @@ public class MapGenerator : NetworkBehaviour
     private static readonly float mapScale = 3.0f;
     public GameObject mapContainer;
     public GameObject tankObj;
+
+    //æœåŠ¡å™¨ç”Ÿæˆåä¿ç•™æ ¼å­æ•°æ®ï¼Œç”µè„‘ç©å®¶ç”¨å®ƒåš A* å¯»è·¯
+    public MapDataContainer CurrentMap { get; private set; }
+    readonly List<GameObject> spawnedBots = new List<GameObject>();
+
     public void ResetMap()
     {
-        //TO DO: ÖØÖÃµØÍ¼
+        //TO DO: é‡ç½®åœ°å›¾
+        CurrentMap = null;
+        spawnedBots.Clear();
         foreach(Transform child in mapContainer.transform)
         {
             child.GetComponent<NetworkObject>().Despawn(true);
@@ -28,7 +35,7 @@ public class MapGenerator : NetworkBehaviour
         {
             tank.GetComponent<NetworkObject>().Despawn(true);
         }
-        GameObject[] bulletList = GameObject.FindGameObjectsWithTag("Bullet"); 
+        GameObject[] bulletList = GameObject.FindGameObjectsWithTag("Bullet");
         foreach (GameObject bullet in bulletList)
         {
             bullet.GetComponent<NetworkObject>().Despawn(true);
@@ -36,7 +43,19 @@ public class MapGenerator : NetworkBehaviour
         foreach (var data in FindObjectOfType<PlayerListManager>().PlayerList)
         {
             GameObject tank = Instantiate(tankObj, new Vector3(0, 0, 0), Quaternion.identity);
-            tank.GetComponent<NetworkObject>().SpawnAsPlayerObject(data.clientId, true);
+            if (data.isBot)
+            {
+                //ç”µè„‘ç©å®¶ç”±æœåŠ¡å™¨ç›´æ¥æŒæœ‰ï¼Œä¸æ˜¯çœŸå®è¿æ¥ï¼Œä¸èƒ½èµ° SpawnAsPlayerObject
+                tank.GetComponent<NetworkObject>().Spawn(true);
+                var controller = tank.GetComponent<TankController>();
+                controller.isBot = true;
+                controller.SetPlayerId(data.clientId);
+                spawnedBots.Add(tank);
+            }
+            else
+            {
+                tank.GetComponent<NetworkObject>().SpawnAsPlayerObject(data.clientId, true);
+            }
         }
     }
 
@@ -44,6 +63,21 @@ public class MapGenerator : NetworkBehaviour
     {
         ResetMap();
         GenerateMap();
+        StartBotBrains();
+    }
+
+    void StartBotBrains()
+    {
+        if (!IsServer) return;
+        foreach (var tank in spawnedBots)
+        {
+            if (tank == null) continue;
+            var brain = tank.GetComponent<AiTankController>();
+            if (brain == null) brain = tank.AddComponent<AiTankController>();
+            brain.Initialize(this);
+            Debug.Log($"[AI] ç”µè„‘ç©å®¶ {tank.GetComponent<TankController>().playerId} å·²å¼€å§‹è¡ŒåŠ¨");
+        }
+        spawnedBots.Clear();
     }
 
     public void ResetAndGenerateLater(float delay)
@@ -76,7 +110,7 @@ public class MapGenerator : NetworkBehaviour
         }
         bool IsConnectedAll()
         {
-            //Ö»ÒªÈ·±£tankPos[0]ºÍÆäËûÎ»ÖÃ»¥Í¨£¬¾ÍËµÃ÷ËùÓĞÎ»ÖÃ»¥Í¨
+            //åªè¦ç¡®ä¿tankPos[0]å’Œå…¶ä»–ä½ç½®äº’é€šï¼Œå°±è¯´æ˜æ‰€æœ‰ä½ç½®äº’é€š
             for (int i = 1;i < tankPos.Count;i++)
             {
                 if (!mapData.isConnected(tankPos[i], tankPos[0])) return false;
@@ -87,7 +121,7 @@ public class MapGenerator : NetworkBehaviour
         {
             return true;
         });
-        //Ïû³ı10%µÄÂ·ÕÏ£¬Ö±µ½ËùÓĞÌ¹¿ËÎ»ÖÃ»¥Í¨
+        //æ¶ˆé™¤10%çš„è·¯éšœï¼Œç›´åˆ°æ‰€æœ‰å¦å…‹ä½ç½®äº’é€š
         while (!IsConnectedAll())
         {
             mapData.ForEach((bool oldValue) =>
@@ -108,7 +142,7 @@ public class MapGenerator : NetworkBehaviour
                 }
             });
         }
-        //ÈÃ±ßÔµÈ«ÊÇÂ·ÕÏ
+        //è®©è¾¹ç¼˜å…¨æ˜¯è·¯éšœ
         for(int i=0;i<mapData.xCount;i++)
         {
             mapData.SetData(new MapDataContainer.BlockPosition(new Vector2Int(i, 0), MapDataContainer.BlockDirction.Down), true);
@@ -119,7 +153,7 @@ public class MapGenerator : NetworkBehaviour
             mapData.SetData(new MapDataContainer.BlockPosition(new Vector2Int(0, i), MapDataContainer.BlockDirction.Left), true);
             mapData.SetData(new MapDataContainer.BlockPosition(new Vector2Int(mapData.xCount - 1, i), MapDataContainer.BlockDirction.Right), true);
         }
-        //ÉèÖÃÌ¹¿ËÎ»ÖÃ
+        //è®¾ç½®å¦å…‹ä½ç½®
         for (int i = 0; i < tankList.Length; i++)
         {
             Vector2Int pos = tankPos[i];
@@ -131,14 +165,14 @@ public class MapGenerator : NetworkBehaviour
             for(int j=0;j<mapData.yCount;j++)
             {
                 Vector3 blockPos = new Vector3(i * mapScale, j * mapScale,0);
-                //ÏÂ
+                //ä¸‹
                 if (mapData.GetData(new MapDataContainer.BlockPosition(new Vector2Int(i, j), MapDataContainer.BlockDirction.Down)))
                 {
                     GameObject obj = Instantiate(roadblock, blockPos + new Vector3(mapScale / 2, 0, 0), Quaternion.Euler(0, 0, 90), mapContainer.transform);
                     obj.GetComponent<NetworkObject>().Spawn(true);
                     obj.transform.SetParent(mapContainer.transform);
                 }
-                //×ó
+                //å·¦
                 if (mapData.GetData(new MapDataContainer.BlockPosition(new Vector2Int(i, j), MapDataContainer.BlockDirction.Left)))
                 {
                     GameObject obj = Instantiate(roadblock, blockPos + new Vector3(0, mapScale / 2, 0), Quaternion.identity, mapContainer.transform);
@@ -149,7 +183,7 @@ public class MapGenerator : NetworkBehaviour
         }
         for(int i=0;i<mapData.xCount;i++)
         {
-            //ÉÏ
+            //ä¸Š
             if (mapData.GetData(new MapDataContainer.BlockPosition(new Vector2Int(i, mapData.yCount - 1), MapDataContainer.BlockDirction.Up)))
             {
                 Vector3 blockPos = new Vector3(i * mapScale, mapData.yCount * mapScale,0);
@@ -160,7 +194,7 @@ public class MapGenerator : NetworkBehaviour
         }
         for(int i=0;i<mapData.yCount;i++)
         {
-            //ÓÒ
+            //å³
             if (mapData.GetData(new MapDataContainer.BlockPosition(new Vector2Int(mapData.xCount - 1, i), MapDataContainer.BlockDirction.Right)))
             {
                 Vector3 blockPos = new Vector3(mapData.xCount * mapScale, i * mapScale,0);
@@ -169,12 +203,28 @@ public class MapGenerator : NetworkBehaviour
                 obj.transform.SetParent(mapContainer.transform);
             }
         }
+        //åœ°å›¾æ•°æ®å·²ç»å®šç¨¿ï¼Œäº¤ç»™ç”µè„‘ç©å®¶å¯»è·¯ä½¿ç”¨
+        CurrentMap = mapData;
         SetCameraData_ClientRpc(ScaledMapSize);
+    }
+
+    public static float CellSize => mapScale;
+
+    public Vector2Int WorldToCell(Vector3 world)
+    {
+        return new Vector2Int(
+            Mathf.Clamp(Mathf.FloorToInt(world.x / mapScale), 0, Mathf.Max(0, mapSize.x - 1)),
+            Mathf.Clamp(Mathf.FloorToInt(world.y / mapScale), 0, Mathf.Max(0, mapSize.y - 1)));
+    }
+
+    public Vector3 CellCenter(Vector2Int cell)
+    {
+        return new Vector3((cell.x + 0.5f) * mapScale, (cell.y + 0.5f) * mapScale, 0f);
     }
 }
 
 
-class MapDataContainer
+public class MapDataContainer
 {
     bool[][] data;
     public MapDataContainer(int xCount, int yCount)
@@ -274,25 +324,25 @@ class MapDataContainer
         {
             Vector2Int cur = queue.Dequeue();
             if (cur == pos2) return true;
-            //ÉÏ
+            //ä¸Š
             if (cur.y + 1 < yCount && !GetData(cur, BlockDirction.Up) && !grid[cur.x][cur.y + 1])
             {
                 grid[cur.x][cur.y + 1] = true;
                 queue.Enqueue(new Vector2Int(cur.x, cur.y + 1));
             }
-            //ÏÂ
+            //ä¸‹
             if (cur.y - 1 >= 0 && !GetData(cur, BlockDirction.Down) && !grid[cur.x][cur.y - 1])
             {
                 grid[cur.x][cur.y - 1] = true;
                 queue.Enqueue(new Vector2Int(cur.x, cur.y - 1));
             }
-            //×ó
+            //å·¦
             if (cur.x - 1 >= 0 && !GetData(cur, BlockDirction.Left) && !grid[cur.x - 1][cur.y])
             {
                 grid[cur.x - 1][cur.y] = true;
                 queue.Enqueue(new Vector2Int(cur.x - 1, cur.y));
             }
-            //ÓÒ
+            //å³
             if (cur.x + 1 < xCount && !GetData(cur, BlockDirction.Right) && !grid[cur.x + 1][cur.y])
             {
                 grid[cur.x + 1][cur.y] = true;

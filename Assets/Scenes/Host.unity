@@ -1292,6 +1292,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e1b4bd9acf63bbe4b9122cb3f622d3d2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  botCount: 1
 --- !u!4 &1124048640
 Transform:
   m_ObjectHideFlags: 0
