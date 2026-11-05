@@ -1,6 +1,7 @@
 using System;
 using Unity.Collections;
 using Unity.Netcode;
+using UnityEngine;
 
 public class PlayerListManager:NetworkBehaviour
 {
@@ -9,16 +10,18 @@ public class PlayerListManager:NetworkBehaviour
         public ulong clientId;
         public FixedString64Bytes name;
         public int score;
+        public bool isBot;
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
             serializer.SerializeValue(ref clientId);
             serializer.SerializeValue(ref name);
             serializer.SerializeValue(ref score);
+            serializer.SerializeValue(ref isBot);
         }
 
         public bool Equals(ClientData other)
         {
-            return clientId == other.clientId && name.Equals(other.name) && score == other.score;
+            return clientId == other.clientId && name.Equals(other.name) && score == other.score && isBot == other.isBot;
         }
 
         public override bool Equals(object obj)
@@ -28,12 +31,17 @@ public class PlayerListManager:NetworkBehaviour
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(clientId, name, score);
+            return HashCode.Combine(clientId, name, score, isBot);
         }
     }
 
     //NetworkList 由服务器维护，增删改会自动同步到所有客户端
     public readonly NetworkList<ClientData> PlayerList = new NetworkList<ClientData>();
+
+    //电脑玩家用高位 id，避免和真实连接 id 冲突
+    const ulong BotIdBase = 1UL << 63;
+    int nextBotIndex;
+    [SerializeField] int botCount = 1;
 
     public override void OnNetworkSpawn()
     {
@@ -50,6 +58,12 @@ public class PlayerListManager:NetworkBehaviour
             SetName(clientId, default);
         }
         SetName(NetworkManager.LocalClientId, ClientViewManager.clientName);
+
+        //大厅里先补齐电脑玩家，开新一局时它们和真人一起重建坦克
+        for (int i = 0; i < botCount; i++)
+        {
+            AddBot($"电脑 {i + 1}");
+        }
     }
 
     public override void OnNetworkDespawn()
@@ -91,6 +105,35 @@ public class PlayerListManager:NetworkBehaviour
             if (data.score == 0) continue;
             data.score = 0;
             PlayerList[i] = data;
+        }
+    }
+
+    /// <summary>
+    /// 添加一个由服务器控制的电脑玩家。只能由服务器调用。
+    /// </summary>
+    public ulong AddBot(string botName)
+    {
+        if (!IsServer) return 0;
+        ulong botId = BotIdBase + (ulong)nextBotIndex++;
+        PlayerList.Add(new ClientData
+        {
+            clientId = botId,
+            name = botName,
+            isBot = true
+        });
+        return botId;
+    }
+
+    /// <summary>
+    /// 移除一个电脑玩家。只能由服务器调用。
+    /// </summary>
+    public void RemoveBot(ulong clientId)
+    {
+        if (!IsServer) return;
+        for (int i = PlayerList.Count - 1; i >= 0; i--)
+        {
+            if (PlayerList[i].clientId == clientId && PlayerList[i].isBot)
+                PlayerList.RemoveAt(i);
         }
     }
 

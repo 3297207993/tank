@@ -16,9 +16,16 @@ public class MapGenerator : NetworkBehaviour
     private static readonly float mapScale = 3.0f;
     public GameObject mapContainer;
     public GameObject tankObj;
+
+    //服务器生成后保留格子数据，电脑玩家用它做 A* 寻路
+    public MapDataContainer CurrentMap { get; private set; }
+    readonly List<GameObject> spawnedBots = new List<GameObject>();
+
     public void ResetMap()
     {
         //TO DO: 重置地图
+        CurrentMap = null;
+        spawnedBots.Clear();
         foreach(Transform child in mapContainer.transform)
         {
             child.GetComponent<NetworkObject>().Despawn(true);
@@ -28,7 +35,7 @@ public class MapGenerator : NetworkBehaviour
         {
             tank.GetComponent<NetworkObject>().Despawn(true);
         }
-        GameObject[] bulletList = GameObject.FindGameObjectsWithTag("Bullet"); 
+        GameObject[] bulletList = GameObject.FindGameObjectsWithTag("Bullet");
         foreach (GameObject bullet in bulletList)
         {
             bullet.GetComponent<NetworkObject>().Despawn(true);
@@ -36,7 +43,19 @@ public class MapGenerator : NetworkBehaviour
         foreach (var data in FindObjectOfType<PlayerListManager>().PlayerList)
         {
             GameObject tank = Instantiate(tankObj, new Vector3(0, 0, 0), Quaternion.identity);
-            tank.GetComponent<NetworkObject>().SpawnAsPlayerObject(data.clientId, true);
+            if (data.isBot)
+            {
+                //电脑玩家由服务器直接持有，不是真实连接，不能走 SpawnAsPlayerObject
+                tank.GetComponent<NetworkObject>().Spawn(true);
+                var controller = tank.GetComponent<TankController>();
+                controller.isBot = true;
+                controller.SetPlayerId(data.clientId);
+                spawnedBots.Add(tank);
+            }
+            else
+            {
+                tank.GetComponent<NetworkObject>().SpawnAsPlayerObject(data.clientId, true);
+            }
         }
     }
 
@@ -44,6 +63,21 @@ public class MapGenerator : NetworkBehaviour
     {
         ResetMap();
         GenerateMap();
+        StartBotBrains();
+    }
+
+    void StartBotBrains()
+    {
+        if (!IsServer) return;
+        foreach (var tank in spawnedBots)
+        {
+            if (tank == null) continue;
+            var brain = tank.GetComponent<AiTankController>();
+            if (brain == null) brain = tank.AddComponent<AiTankController>();
+            brain.Initialize(this);
+            Debug.Log($"[AI] 电脑玩家 {tank.GetComponent<TankController>().playerId} 已开始行动");
+        }
+        spawnedBots.Clear();
     }
 
     public void ResetAndGenerateLater(float delay)
@@ -169,12 +203,28 @@ public class MapGenerator : NetworkBehaviour
                 obj.transform.SetParent(mapContainer.transform);
             }
         }
+        //地图数据已经定稿，交给电脑玩家寻路使用
+        CurrentMap = mapData;
         SetCameraData_ClientRpc(ScaledMapSize);
+    }
+
+    public static float CellSize => mapScale;
+
+    public Vector2Int WorldToCell(Vector3 world)
+    {
+        return new Vector2Int(
+            Mathf.Clamp(Mathf.FloorToInt(world.x / mapScale), 0, Mathf.Max(0, mapSize.x - 1)),
+            Mathf.Clamp(Mathf.FloorToInt(world.y / mapScale), 0, Mathf.Max(0, mapSize.y - 1)));
+    }
+
+    public Vector3 CellCenter(Vector2Int cell)
+    {
+        return new Vector3((cell.x + 0.5f) * mapScale, (cell.y + 0.5f) * mapScale, 0f);
     }
 }
 
 
-class MapDataContainer
+public class MapDataContainer
 {
     bool[][] data;
     public MapDataContainer(int xCount, int yCount)

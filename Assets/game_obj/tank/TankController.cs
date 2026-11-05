@@ -10,10 +10,60 @@ public class TankController : NetworkBehaviour
     public GameObject bullet;
     public GameObject destoryEffect;
     NetworkVariable<int> bulletCount = new(5);
+    //炮塔本地角度，服务器写入，其他客户端用它复现炮塔朝向
+    //初值 270 对应 prefab 里炮塔的 -90 度，避免开局或中途加入的客户端先把炮塔掰到 0 度
+    NetworkVariable<float> turretAngle = new(270f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+    //服务器端的身份标记：电脑玩家不是真实连接，用虚拟 id 计分
+    [System.NonSerialized] public bool isBot;
+    [System.NonSerialized] public ulong playerId;
+
+    public int Ammo => bulletCount.Value;
+
+    public override void OnNetworkSpawn()
+    {
+        playerId = OwnerClientId;
+        turretAngle.OnValueChanged += OnTurretAngleChanged;
+        if (IsServer)
+        {
+            //开局先把真实炮塔角度写进去；之后定期兜底，保证中途加入的客户端也能拿到正确朝向
+            SyncTurretAngle();
+            InvokeRepeating(nameof(SyncTurretAngle), 0.25f, 0.25f);
+        }
+        else if (!IsOwner)
+        {
+            ApplyTurretAngle(turretAngle.Value);
+        }
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        turretAngle.OnValueChanged -= OnTurretAngleChanged;
+        CancelInvoke(nameof(SyncTurretAngle));
+    }
+
+    public void SetPlayerId(ulong id)
+    {
+        playerId = id;
+    }
+
+    void OnTurretAngleChanged(float previous, float current)
+    {
+        //本机自己转向，不走服务器回声；其他客户端按服务器角度复现
+        if (IsOwner) return;
+        ApplyTurretAngle(current);
+    }
+
+    void ApplyTurretAngle(float angle)
+    {
+        if (turret == null) return;
+        turret.transform.localRotation = Quaternion.Euler(0f, 0f, angle);
+    }
+
     // Start is called before the first frame update
     void Start()
     {
-        if (IsOwner)
+        if (IsOwner && !isBot)
         {
             var coms = gameObject.GetComponentsInChildren<SpriteRenderer>();
             foreach (var com in coms)
@@ -27,7 +77,7 @@ public class TankController : NetworkBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (!IsLocalPlayer) return;
+        if (!IsLocalPlayer || isBot) return;
         if(Input.GetKeyDown(KeyCode.Space))
         {
             if(bulletCount.Value>0)
@@ -37,60 +87,99 @@ public class TankController : NetworkBehaviour
 
     private void FixedUpdate()
     {
-        if (!IsLocalPlayer) return;
-        //deal with tank movement
-        if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow))
-        {
-            forward();
-        }
-        else if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow))
-        {
-            backward();
-        }
-        if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow))
-        {
-            turnLeft();
-        }
-        else if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow))
-        {
-            turnRight();
-        }
+        if (!IsLocalPlayer || isBot) return;
+
+        float throttle = 0f;
+        if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) throttle += 1f;
+        else if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) throttle -= 1f;
+
+        float steer = 0f;
+        if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) steer += 1f;
+        else if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) steer -= 1f;
+
+        if (throttle != 0f || steer != 0f) ApplyDrive(throttle, steer);
 
         if (Input.GetKey(KeyCode.Comma))
         {
-            turretLeft();
+            ApplyTurret(1f);
             if (!IsServer) updateMovement_ServerRpc(KeyCode.Comma);
         }
         else if (Input.GetKey(KeyCode.Period))
         {
-            turretRight();
+            ApplyTurret(-1f);
             if (!IsServer) updateMovement_ServerRpc(KeyCode.Period);
         }
     }
 
     FixedNetworkTransform fixedNetworkTransform;
 
-    void forward() { fixedNetworkTransform.addMovement(Vector3.up * Time.fixedDeltaTime * 5); }
-    void backward() { fixedNetworkTransform.addMovement(Vector3.down * Time.fixedDeltaTime * 5); }
-    void turnLeft() { fixedNetworkTransform.addRotate(Vector3.forward * 180 * Time.fixedDeltaTime); }
-    void turnRight() { fixedNetworkTransform.addRotate(Vector3.forward * -180 * Time.fixedDeltaTime); }
-    void turretLeft() { turret.transform.Rotate(Vector3.forward, 180 * Time.fixedDeltaTime); }
-    void turretRight() { turret.transform.Rotate(Vector3.forward, -180 * Time.fixedDeltaTime); }
+    /// <summary>
+    /// 本地/服务器通用的驾驶接口。throttle 为前后，steer 为左右，范围 -1..1。
+    /// </summary>
+    public void ApplyDrive(float throttle, float steer)
+    {
+        if (fixedNetworkTransform == null) fixedNetworkTransform = GetComponent<FixedNetworkTransform>();
+        if (fixedNetworkTransform == null) return;
+        if (throttle != 0f)
+            fixedNetworkTransform.addMovement(Vector3.up * (throttle * Time.fixedDeltaTime * 5f));
+        if (steer != 0f)
+            fixedNetworkTransform.addRotate(Vector3.forward * (steer * 180f * Time.fixedDeltaTime));
+    }
+
+    public void ApplyTurret(float steer)
+    {
+        if (turret == null || steer == 0f) return;
+        turret.transform.Rotate(Vector3.forward, steer * 180f * Time.fixedDeltaTime);
+        SyncTurretAngle();
+    }
+
+    /// <summary>
+    /// 以不超过 180 度/秒的速度把炮塔转向一个世界方向，电脑玩家用它做精确瞄准。
+    /// </summary>
+    public void AimTurretTowards(Vector3 worldDirection)
+    {
+        if (turret == null) return;
+        worldDirection.z = 0f;
+        if (worldDirection.sqrMagnitude < 0.0001f) return;
+        float delta = Vector3.SignedAngle(turret.transform.up, worldDirection, Vector3.forward);
+        float step = Mathf.Clamp(delta, -180f * Time.fixedDeltaTime, 180f * Time.fixedDeltaTime);
+        if (Mathf.Abs(step) < 0.0001f) return;
+        turret.transform.Rotate(Vector3.forward, step);
+        SyncTurretAngle();
+    }
+
+    void SyncTurretAngle()
+    {
+        if (!IsServer || !IsSpawned || turret == null) return;
+        turretAngle.Value = turret.transform.localEulerAngles.z;
+    }
+
+    void turretLeft() { ApplyTurret(1f); }
+    void turretRight() { ApplyTurret(-1f); }
     [ServerRpc]
     void fire_ServerRpc()
     {
-        if(bulletCount.Value>0)
-        {
-            RaycastHit2D[] hits = new RaycastHit2D[1];
-            GetComponent<Collider2D>().Raycast(turret.transform.up, hits);
-            var hit = hits[0];
-            var obj = Instantiate(bullet, turret.transform.position + turret.transform.up * Mathf.Min(hit.distance, 1.2f), turret.transform.rotation);
-            //记录射手，命中时用于加分
-            obj.GetComponent<CommonBulletController>().shooterClientId = OwnerClientId;
-            obj.GetComponent<NetworkObject>().Spawn(true);
-            bulletCount.Value -= 1;
-            Invoke(nameof(bulletCountAdd), CommonBulletController.bulletLifeTime);
-        }
+        TryFire();
+    }
+
+    /// <summary>
+    /// 服务器端开火。真人通过 ServerRpc 调用，电脑玩家直接调用。
+    /// </summary>
+    public bool TryFire()
+    {
+        if (!IsServer || !IsSpawned) return false;
+        if (bulletCount.Value <= 0) return false;
+
+        RaycastHit2D[] hits = new RaycastHit2D[1];
+        GetComponent<Collider2D>().Raycast(turret.transform.up, hits);
+        var hit = hits[0];
+        var obj = Instantiate(bullet, turret.transform.position + turret.transform.up * Mathf.Min(hit.distance, 1.2f), turret.transform.rotation);
+        //记录射手，命中时用于加分
+        obj.GetComponent<CommonBulletController>().shooterClientId = playerId;
+        obj.GetComponent<NetworkObject>().Spawn(true);
+        bulletCount.Value -= 1;
+        Invoke(nameof(bulletCountAdd), CommonBulletController.bulletLifeTime);
+        return true;
     }
 
     void bulletCountAdd()
@@ -121,7 +210,7 @@ public class TankController : NetworkBehaviour
                 var bulletController = collision.gameObject.GetComponent<CommonBulletController>();
                 if (bulletController != null
                     && bulletController.shooterClientId != ulong.MaxValue
-                    && bulletController.shooterClientId != OwnerClientId)
+                    && bulletController.shooterClientId != playerId)
                 {
                     var playerListManager = FindObjectOfType<PlayerListManager>();
                     if (playerListManager != null) playerListManager.AddScore(bulletController.shooterClientId);

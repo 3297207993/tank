@@ -14,7 +14,7 @@ public class ClientItemManager
         var label = element.Q<Label>("name");
         label.text = data.name.ToString();
         var id = element.Q<Label>("id");
-        id.text = "ID: " + data.clientId;
+        id.text = data.isBot ? "电脑" : "ID: " + data.clientId;
         var score = element.Q<Label>("score");
         if (score != null) score.text = data.score.ToString();
 
