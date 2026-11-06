@@ -22,7 +22,7 @@ sequenceDiagram
     L->>MG: 点“开始” → ResetAndGenerate()
     MG->>MG: ResetMap：Instantiate(tank)
     MG->>MG: Spawn（普通对象，不是玩家对象）
-    MG->>MG: controller.isBot = true; SetPlayerId(虚拟 id)
+    MG->>MG: controller.isBot = true, SetPlayerId(虚拟 id)
     MG->>AI: StartBotBrains：AddComponent + Initialize(mapGenerator)
     AI->>AI: 每 FixedUpdate 决策
 ```
