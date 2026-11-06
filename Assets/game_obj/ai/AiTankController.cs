@@ -1,30 +1,22 @@
 using System;
-using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
 //服务器端的电脑玩家：感知、决策、导航、瞄准全部在服务器上跑。
-//规则内尽可能强：瞬时反应、零瞄准误差、直线视线锁射；仍然受墙、视线、转向速度、弹药和子弹飞行时间限制。
+//2D 全图可见，没有“看不见”的情况：直接锁定最近的敌方坦克，不再巡逻、记忆或听枪声。
+//规则内尽可能强：瞬时反应、零瞄准误差、提前量射击；仍然受墙、转向速度、弹药和子弹飞行时间限制。
 public class AiTankController : MonoBehaviour
 {
-    enum AiState
-    {
-        Patrol,
-        Hunt,
-        Engage,
-    }
-
     const float PerceptionInterval = 0.08f;
     const float PathInterval = 0.35f;
     const float DodgeCheckInterval = 0.06f;
     const float DodgeHorizon = 1.15f;
-    const float DodgeStep = 0.07f;
+    const float DodgeRadius = 0.9f;
     const float PreferredMinRange = 3.5f;
     const float PreferredMaxRange = 8.5f;
     const float FireCooldown = 0.18f;
     const float AimTolerance = 0.7f;
     const float MaxInterceptTime = 2.6f;
-    const float MemoryDuration = 4f;
     const float TankRadius = 0.75f;
     const float PathClearance = 0.95f;
     const float MoveProbe = 0.7f;
@@ -36,13 +28,11 @@ public class AiTankController : MonoBehaviour
     Transform turret;
     AiNavigation navigation;
 
-    AiState state = AiState.Patrol;
     TankController target;
     Vector3 targetPosition;
     Vector3 targetVelocity;
-    Vector3 lastSeenPosition;
-    float lastSeenTime = -999f;
     float lastTargetSampleTime;
+    bool targetShotClear;
 
     float nextPerceptionTime;
     float nextPathTime;
@@ -53,12 +43,6 @@ public class AiTankController : MonoBehaviour
 
     Vector3 pathGoal;
     bool hasPathGoal;
-
-    Vector2Int patrolCell;
-    bool hasPatrolGoal;
-
-    bool hasInvestigatePoint;
-    Vector3 investigatePoint;
 
     Vector3 dodgeDirection;
     float dodgeUntil;
@@ -125,12 +109,15 @@ public class AiTankController : MonoBehaviour
         CheckStuck(now);
     }
 
+    //全图可见：直接锁定最近的敌方坦克，不再做视线筛选、记忆和巡逻
     void UpdateTarget(float now)
     {
         if (now < nextPerceptionTime) return;
         nextPerceptionTime = now + PerceptionInterval;
 
+        //最近且能打到的目标优先；都被墙挡住时退而求其次选最近的
         TankController best = null;
+        bool bestClear = false;
         float bestDistance = float.MaxValue;
         foreach (var obj in GameObject.FindGameObjectsWithTag("Tank"))
         {
@@ -138,10 +125,20 @@ public class AiTankController : MonoBehaviour
             if (candidate == null || candidate == tank) continue;
             var candidateObject = obj.GetComponent<NetworkObject>();
             if (candidateObject != null && !candidateObject.IsSpawned) continue;
+
             float distance = Vector2.Distance(transform.position, candidate.transform.position);
-            if (distance >= bestDistance) continue;
-            if (!HasLineOfSight(candidate)) continue;
+            bool clear = IsShotPathClear(turret.position, candidate.transform.position, candidate);
+            if (clear == bestClear)
+            {
+                if (distance >= bestDistance) continue;
+            }
+            else if (!clear)
+            {
+                //已经有一个能打到的目标，忽略被挡住的
+                continue;
+            }
             best = candidate;
+            bestClear = clear;
             bestDistance = distance;
         }
 
@@ -159,48 +156,24 @@ public class AiTankController : MonoBehaviour
                 float dt = Mathf.Max(0.001f, now - lastTargetSampleTime);
                 Vector3 instantVelocity = (best.transform.position - targetPosition) / dt;
                 instantVelocity.z = 0f;
-                //限制异常值，避免刚重置或瞬移时算错提前量
+                //限制异常值，避免开局瞬移或重生时算错提前量
                 if (instantVelocity.sqrMagnitude > 36f) instantVelocity = instantVelocity.normalized * 6f;
                 targetVelocity = Vector3.Lerp(targetVelocity, instantVelocity, 0.65f);
                 lastTargetSampleTime = now;
             }
             targetPosition = best.transform.position;
-            lastSeenPosition = best.transform.position;
-            lastSeenTime = now;
-            state = AiState.Engage;
-            hasInvestigatePoint = false;
+            //移动决策每帧都要用，和感知一起缓存，避免每帧重复射线
+            targetShotClear = bestClear;
         }
         else
         {
             target = null;
             targetVelocity = Vector3.zero;
-            state = now - lastSeenTime < MemoryDuration ? AiState.Hunt : AiState.Patrol;
+            targetShotClear = false;
         }
     }
 
-    bool HasLineOfSight(TankController candidate)
-    {
-        Vector2 origin = transform.position;
-        Vector2 delta = (Vector2)candidate.transform.position - origin;
-        float distance = delta.magnitude;
-        if (distance <= 0.01f) return true;
-
-        var hits = Physics2D.RaycastAll(origin, delta / distance, distance);
-        if (hits == null || hits.Length == 0) return true;
-        Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
-
-        foreach (var hit in hits)
-        {
-            if (hit.collider == null) continue;
-            var hitTransform = hit.collider.transform;
-            if (hitTransform == transform || hitTransform.IsChildOf(transform)) continue;
-            if (hit.collider.CompareTag("Bullet")) continue;
-            return hit.collider.GetComponentInParent<TankController>() == candidate;
-        }
-        return true;
-    }
-
-    //短时模拟场上子弹，包括墙壁反弹，判断是否会在近期打到自己
+    //场上子弹都可见，直接判断子弹沿当前方向的直线路径是否会经过自己
     void UpdateBulletThreat(float now)
     {
         if (now < nextDodgeCheckTime) return;
@@ -222,19 +195,20 @@ public class AiTankController : MonoBehaviour
             float speed = vel.magnitude;
             if (speed < 0.5f) continue;
 
-            //看不见人时，按子弹飞来的方向去调查枪声来源，这是玩家能看到的信息
-            var bulletController = bulletObj.GetComponent<CommonBulletController>();
-            if (!hasInvestigatePoint && target == null && bulletController != null
-                && bulletController.shooterClientId != tank.playerId
-                && now - lastSeenTime > MemoryDuration
-                && Vector2.Distance(pos, me) < 20f)
-            {
-                investigatePoint = pos - vel.normalized * 6f;
-                hasInvestigatePoint = true;
-            }
+            Vector2 dir = vel / speed;
+            float along = Vector2.Dot(me - pos, dir);
+            //已经飞过自己的子弹不算威胁，否则会在身边来回抽搐
+            if (along <= 0f) continue;
+            float impactTime = along / speed;
+            if (impactTime > DodgeHorizon) continue;
+            if (Vector2.Distance(pos + dir * along, me) > DodgeRadius) continue;
 
-            SimulateBullet(bulletObj, pos, vel, speed, me,
-                ref bestImpact, ref bestDirection, ref bestBulletPos);
+            if (impactTime < bestImpact)
+            {
+                bestImpact = impactTime;
+                bestDirection = dir;
+                bestBulletPos = pos;
+            }
         }
 
         if (bestImpact >= float.MaxValue) return;
@@ -254,168 +228,54 @@ public class AiTankController : MonoBehaviour
         dodgeUntil = now + 0.3f;
     }
 
-    void SimulateBullet(GameObject bulletObj, Vector2 pos, Vector2 vel, float speed, Vector2 me,
-        ref float bestImpact, ref Vector2 bestDirection, ref Vector2 bestBulletPos)
-    {
-        Vector2 dir = vel / speed;
-        float elapsed = 0f;
-        int bounces = 0;
-
-        while (elapsed < DodgeHorizon && bounces < 5)
-        {
-            float segment = speed * DodgeStep;
-            Vector2 next = pos + dir * segment;
-
-            var hits = Physics2D.CircleCastAll(pos, 0.16f, dir, segment);
-            RaycastHit2D? nearest = null;
-            if (hits != null)
-            {
-                foreach (var hit in hits)
-                {
-                    if (hit.collider == null) continue;
-                    var hitTransform = hit.collider.transform;
-                    if (hitTransform == bulletObj.transform || hitTransform.IsChildOf(bulletObj.transform)) continue;
-                    if (hit.collider.CompareTag("Bullet")) continue;
-                    if (nearest == null || hit.distance < nearest.Value.distance) nearest = hit;
-                }
-            }
-
-            if (nearest.HasValue)
-            {
-                var hit = nearest.Value;
-                var hitTank = hit.collider.GetComponentInParent<TankController>();
-                if (hitTank == tank)
-                {
-                    RegisterThreat(elapsed, dir, pos, ref bestImpact, ref bestDirection, ref bestBulletPos);
-                    return;
-                }
-                if (hitTank != null)
-                {
-                    //被别的坦克挡住，子弹会消失
-                    return;
-                }
-                next = hit.point + hit.normal * 0.02f;
-                dir = Vector2.Reflect(dir, hit.normal);
-                bounces++;
-            }
-
-            //已经飞过自己的子弹不算威胁，否则会在身边来回抽搐
-            if (Vector2.Dot(me - pos, dir) > 0f && DistancePointToSegment(me, pos, next) < 0.9f)
-            {
-                RegisterThreat(elapsed, dir, pos, ref bestImpact, ref bestDirection, ref bestBulletPos);
-                return;
-            }
-
-            pos = next;
-            elapsed += DodgeStep;
-        }
-    }
-
-    static void RegisterThreat(float elapsed, Vector2 dir, Vector2 bulletPos,
-        ref float bestImpact, ref Vector2 bestDirection, ref Vector2 bestBulletPos)
-    {
-        if (elapsed >= bestImpact) return;
-        bestImpact = elapsed;
-        bestDirection = dir;
-        bestBulletPos = bulletPos;
-    }
-
-    static float DistancePointToSegment(Vector2 point, Vector2 a, Vector2 b)
-    {
-        Vector2 ab = b - a;
-        float lengthSq = ab.sqrMagnitude;
-        if (lengthSq < 0.0001f) return Vector2.Distance(point, a);
-        float t = Mathf.Clamp01(Vector2.Dot(point - a, ab) / lengthSq);
-        return Vector2.Distance(point, a + ab * t);
-    }
-
     bool DecideMovement(float now, out Vector3 direction)
     {
         direction = Vector3.zero;
+        if (target == null) return false;
 
-        //没子弹时以脱离为主，等 30 秒的补给；即使看不见人也按最后目击位置保持距离
+        Vector3 targetPos = target.transform.position;
+        Vector3 toTarget = targetPos - transform.position;
+        float distance = toTarget.magnitude;
+        if (distance < 0.01f) return false;
+        Vector3 dirTo = toTarget / distance;
+
+        //没子弹时以脱离为主，等 30 秒的补给
         if (tank.Ammo <= 0)
         {
-            Vector3 threat = transform.position;
-            if (target != null) threat = target.transform.position;
-            else if (now - lastSeenTime < 30f) threat = lastSeenPosition;
-
-            Vector3 away = transform.position - threat;
-            away.z = 0f;
-            if (away.sqrMagnitude > 0.01f)
-            {
-                away.Normalize();
-                if (CanMove(away)) { direction = away; return true; }
-            }
+            Vector3 away = -dirTo;
+            if (CanMove(away)) { direction = away; return true; }
+            return FollowPath(now, transform.position + away * 6f, out direction);
         }
 
-        if (target != null)
+        //隔着墙时先绕过去：侧向绕圈只适合双方能互相射击的情况
+        if (!targetShotClear)
         {
-            Vector3 toTarget = target.transform.position - transform.position;
-            float distance = toTarget.magnitude;
-            if (distance < 0.01f) return false;
-            Vector3 dirTo = toTarget / distance;
+            return FollowPath(now, targetPos, out direction);
+        }
 
-            if (distance > PreferredMaxRange)
-            {
-                if (CanMove(dirTo)) { direction = dirTo; return true; }
-                if (FollowPath(now, target.transform.position, out direction)) return true;
-            }
-            else if (distance < PreferredMinRange)
-            {
-                if (CanMove(-dirTo)) { direction = -dirTo; return true; }
-            }
-
-            //侧向绕圈：保持炮塔独立瞄准的同时让对手更难预判
-            if (now >= nextStrafeSwitch)
-            {
-                strafeSign = -strafeSign;
-                nextStrafeSwitch = now + UnityEngine.Random.Range(0.7f, 1.4f);
-            }
-            Vector3 perp = new Vector3(-dirTo.y, dirTo.x, 0f) * strafeSign;
-            if (CanMove(perp)) { direction = perp; return true; }
-            perp = -perp;
-            if (CanMove(perp)) { strafeSign = -strafeSign; direction = perp; return true; }
+        if (distance > PreferredMaxRange)
+        {
             if (CanMove(dirTo)) { direction = dirTo; return true; }
-            return FollowPath(now, target.transform.position, out direction);
+            return FollowPath(now, targetPos, out direction);
         }
 
-        //追最后看到的位置 / 调查枪声
-        Vector3 goal = Vector3.zero;
-        bool hasGoal = false;
-        if (now - lastSeenTime < MemoryDuration)
+        if (distance < PreferredMinRange)
         {
-            goal = lastSeenPosition;
-            hasGoal = true;
-        }
-        else if (hasInvestigatePoint)
-        {
-            goal = investigatePoint;
-            hasGoal = true;
+            if (CanMove(-dirTo)) { direction = -dirTo; return true; }
         }
 
-        if (hasGoal)
+        //侧向绕圈：保持炮塔独立瞄准的同时让对手更难预判
+        if (now >= nextStrafeSwitch)
         {
-            if (Vector2.Distance(transform.position, goal) > 1.0f)
-            {
-                if (FollowPath(now, goal, out direction)) return true;
-            }
-            else
-            {
-                if (now - lastSeenTime >= MemoryDuration) hasInvestigatePoint = false;
-                lastSeenTime = -999f;
-            }
+            strafeSign = -strafeSign;
+            nextStrafeSwitch = now + UnityEngine.Random.Range(0.7f, 1.4f);
         }
-
-        //巡逻
-        if (!hasPatrolGoal)
-        {
-            PickPatrolGoal();
-        }
-        if (hasPatrolGoal && FollowPath(now, mapGenerator.CellCenter(patrolCell), out direction)) return true;
-
-        PickPatrolGoal();
-        return hasPatrolGoal && FollowPath(now, mapGenerator.CellCenter(patrolCell), out direction);
+        Vector3 perp = new Vector3(-dirTo.y, dirTo.x, 0f) * strafeSign;
+        if (CanMove(perp)) { direction = perp; return true; }
+        perp = -perp;
+        if (CanMove(perp)) { strafeSign = -strafeSign; direction = perp; return true; }
+        if (CanMove(dirTo)) { direction = dirTo; return true; }
+        return FollowPath(now, targetPos, out direction);
     }
 
     bool FollowPath(float now, Vector3 goal, out Vector3 direction)
@@ -437,37 +297,6 @@ public class AiTankController : MonoBehaviour
         if (delta.sqrMagnitude < 0.01f) return false;
         direction = delta.normalized;
         return true;
-    }
-
-    void PickPatrolGoal()
-    {
-        hasPatrolGoal = false;
-        var currentMap = mapGenerator.CurrentMap;
-        if (currentMap == null) return;
-
-        Vector2Int here = mapGenerator.WorldToCell(transform.position);
-        Vector2Int farthest = here;
-        int farthestDistance = -1;
-        for (int i = 0; i < 24; i++)
-        {
-            Vector2Int cell = new Vector2Int(
-                UnityEngine.Random.Range(0, currentMap.xCount),
-                UnityEngine.Random.Range(0, currentMap.yCount));
-            if (cell == here) continue;
-            int distance = (cell - here).sqrMagnitude;
-            if (distance <= farthestDistance) continue;
-            farthest = cell;
-            farthestDistance = distance;
-        }
-        if (farthestDistance >= 0)
-        {
-            patrolCell = farthest;
-            hasPatrolGoal = true;
-            return;
-        }
-
-        patrolCell = new Vector2Int((here.x + 1) % currentMap.xCount, here.y);
-        hasPatrolGoal = true;
     }
 
     void DriveToward(Vector3 direction)
@@ -501,7 +330,7 @@ public class AiTankController : MonoBehaviour
 
                 if (now >= nextFireTime && tank.Ammo > 0
                     && Vector3.Angle(turret.up, aimDirection) <= AimTolerance
-                    && IsShotPathClear(muzzle, predicted)
+                    && IsShotPathClear(muzzle, predicted, target)
                     && MuzzleSafe())
                 {
                     if (tank.TryFire()) nextFireTime = now + FireCooldown;
@@ -511,12 +340,6 @@ public class AiTankController : MonoBehaviour
 
             //解不出提前量时先跟住当前位置，等距离合适再开火
             tank.AimTurretTowards(target.transform.position - muzzle);
-            return;
-        }
-
-        if (now - lastSeenTime < MemoryDuration)
-        {
-            tank.AimTurretTowards(lastSeenPosition - turret.position);
             return;
         }
 
@@ -557,7 +380,7 @@ public class AiTankController : MonoBehaviour
     }
 
     //检查炮塔到预测命中点的直线是否被墙或别的坦克挡住
-    bool IsShotPathClear(Vector3 from, Vector3 to)
+    bool IsShotPathClear(Vector3 from, Vector3 to, TankController expected)
     {
         Vector2 delta = to - from;
         float distance = delta.magnitude;
@@ -575,7 +398,7 @@ public class AiTankController : MonoBehaviour
             var hitTransform = hit.collider.transform;
             if (hitTransform == transform || hitTransform.IsChildOf(transform)) continue;
             if (hit.collider.CompareTag("Bullet")) continue;
-            return hit.collider.GetComponentInParent<TankController>() == target;
+            return hit.collider.GetComponentInParent<TankController>() == expected;
         }
         return true;
     }
@@ -646,7 +469,6 @@ public class AiTankController : MonoBehaviour
         if (tryingToMove && moved < 0.2f && now >= unstuckUntil)
         {
             navigation.Clear();
-            hasPatrolGoal = false;
             unstuckUntil = now + 0.45f;
             Vector3 random = UnityEngine.Random.insideUnitCircle.normalized;
             Vector3 candidate = new Vector3(random.x, random.y, 0f);
@@ -663,7 +485,7 @@ public class AiTankController : MonoBehaviour
     {
         if (!Application.isPlaying || navigation == null) return;
 
-        Gizmos.color = state == AiState.Engage ? Color.red : Color.yellow;
+        Gizmos.color = Color.yellow;
         Vector3 previous = transform.position;
         var points = navigation.Points;
         for (int i = 0; i < points.Count; i++)
