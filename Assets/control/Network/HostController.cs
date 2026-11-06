@@ -8,7 +8,7 @@ public class HostController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        //延时触发，确保其他部分初始化完成
+        //寤舵椂瑙﹀彂锛岀‘淇濆叾浠栭儴鍒嗗垵濮嬪寲瀹屾垚
         Invoke(nameof(StartHost), 0.1f);
     }
 
