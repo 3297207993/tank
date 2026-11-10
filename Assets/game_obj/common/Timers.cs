@@ -59,23 +59,22 @@ public struct Timed<T>
         gate.Set(now, seconds);
     }
 
-    public void SetIfDue(float now, float seconds, T newValue)
+    //到点才写入；返回这次是否真的写入，方便调用方据此做后续处理
+    public bool SetIfDue(float now, float seconds, T newValue)
     {
-        if (gate.IsDue(now))
-        {
-            value = newValue;
-            gate.Set(now, seconds);
-        }
+        if (!gate.IsDue(now)) return false;
+        value = newValue;
+        gate.Set(now, seconds);
+        return true;
     }
 
     //回调版：只有真的需要写入时才调用取值回调，未到点不会产生计算开销
-    public void SetIfDue(float now, float seconds, Func<T> createValue)
+    public bool SetIfDue(float now, float seconds, Func<T> createValue)
     {
-        if (gate.IsDue(now))
-        {
-            value = createValue();
-            gate.Set(now, seconds);
-        }
+        if (!gate.IsDue(now)) return false;
+        value = createValue();
+        gate.Set(now, seconds);
+        return true;
     }
 
     public void Set(float now, float seconds, Func<T> createValue)
