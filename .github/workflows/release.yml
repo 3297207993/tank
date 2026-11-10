@@ -79,8 +79,28 @@ jobs:
             throw "Unity license file not found: $env:UNITY_LICENSE_FILE. Activate the license in Unity Hub or set UNITY_LICENSE_FILE in repository Variables."
           }
 
-          $licenseCopy = Join-Path $env:RUNNER_TEMP "Unity_lic.ulf"
-          Copy-Item -LiteralPath $env:UNITY_LICENSE_FILE -Destination $licenseCopy -Force
+          $licenseDir = Join-Path $env:GITHUB_WORKSPACE "Build"
+          New-Item -ItemType Directory -Path $licenseDir -Force | Out-Null
+          $licenseCopy = Join-Path $licenseDir "Unity_lic.ulf"
+
+          $licenseBytes = $null
+          for ($i = 0; $i -lt 10; $i++) {
+            try {
+              $licenseBytes = [System.IO.File]::ReadAllBytes($env:UNITY_LICENSE_FILE)
+              break
+            } catch {
+              Start-Sleep -Milliseconds 500
+            }
+          }
+          if ($null -eq $licenseBytes -or $licenseBytes.Length -lt 1000) {
+            throw "Could not read a valid license file from $env:UNITY_LICENSE_FILE."
+          }
+          [System.IO.File]::WriteAllBytes($licenseCopy, $licenseBytes)
+          $licenseText = [System.Text.Encoding]::UTF8.GetString($licenseBytes)
+          if ($licenseText -notmatch "UnityPersonal") {
+            throw "License file does not contain a UnityPersonal entitlement: $env:UNITY_LICENSE_FILE"
+          }
+          Write-Host "License copy: $licenseCopy ($($licenseBytes.Length) bytes)"
 
           $unityArgs = @(
             "-batchmode",
@@ -93,6 +113,7 @@ jobs:
             "-manualLicenseFile", "$licenseCopy",
             "-logFile", "-"
           )
+          Write-Host ("Unity args: " + ($unityArgs -join " "))
           & $env:UNITY_PATH @unityArgs
           if ($LASTEXITCODE -ne 0) {
             throw "Unity build failed with exit code $LASTEXITCODE"
