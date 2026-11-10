@@ -8,10 +8,10 @@ public class SelfDestroy : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        Invoke(nameof(selfDestroy), destroyTime);
+        Invoke(nameof(DestroyGameobject), destroyTime);
     }
 
-    void selfDestroy()
+    void DestroyGameobject()
     {
         Destroy(gameObject);
     }
