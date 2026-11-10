@@ -21,6 +21,7 @@ public class AiTankController : MonoBehaviour
     const float PathClearance = 0.95f;
     const float MoveProbe = 0.7f;
     const float BulletSpawnOffset = 1.2f;
+    const float StuckCheckInterval = 0.5f;
 
     MapGenerator mapGenerator;
     MapDataContainer map;
@@ -34,20 +35,20 @@ public class AiTankController : MonoBehaviour
     float lastTargetSampleTime;
     bool targetShotClear;
 
-    float nextPerceptionTime;
-    float nextPathTime;
-    float nextFireTime;
-    float nextDodgeCheckTime;
-    float nextStrafeSwitch;
+    TimeGate perceiveLimit;
+    TimeGate pathLimit;
+    TimeGate fireLimit;
+    TimeGate dodgeCheckLimit;
+    TimeGate strafeLimit;
     int strafeSign = 1;
 
     Vector3 pathGoal;
     bool hasPathGoal;
 
     Vector3 dodgeDirection;
-    float dodgeUntil;
-    float unstuckUntil;
-    float stuckCheckTime;
+    TimeGate dodgeHold;
+    TimeGate unstuckHold;
+    TimeGate stuckCheckLimit;
     Vector3 stuckCheckPosition;
     bool wantsToMove;
     bool tryingToMove;
@@ -69,8 +70,8 @@ public class AiTankController : MonoBehaviour
         }
 
         stuckCheckPosition = transform.position;
-        stuckCheckTime = Time.time + 0.5f;
-        nextStrafeSwitch = Time.time + UnityEngine.Random.Range(0.5f, 1.2f);
+        stuckCheckLimit.Set(Time.time, StuckCheckInterval);
+        strafeLimit.Set(Time.time, UnityEngine.Random.Range(0.5f, 1.2f));
         initialized = true;
     }
 
@@ -91,7 +92,7 @@ public class AiTankController : MonoBehaviour
 
         Vector3 moveDirection = Vector3.zero;
         wantsToMove = false;
-        if (now < dodgeUntil)
+        if (dodgeHold.HasTimeLeft(now))
         {
             moveDirection = dodgeDirection;
             wantsToMove = moveDirection.sqrMagnitude > 0.0001f;
@@ -112,8 +113,7 @@ public class AiTankController : MonoBehaviour
     //全图可见：直接锁定最近的敌方坦克，不再做视线筛选、记忆和巡逻
     void UpdateTarget(float now)
     {
-        if (now < nextPerceptionTime) return;
-        nextPerceptionTime = now + PerceptionInterval;
+        if (!perceiveLimit.TryPass(now, PerceptionInterval)) return;
 
         //最近且能打到的目标优先；都被墙挡住时退而求其次选最近的
         TankController best = null;
@@ -176,8 +176,7 @@ public class AiTankController : MonoBehaviour
     //场上子弹都可见，直接判断子弹沿当前方向的直线路径是否会经过自己
     void UpdateBulletThreat(float now)
     {
-        if (now < nextDodgeCheckTime) return;
-        nextDodgeCheckTime = now + DodgeCheckInterval;
+        if (!dodgeCheckLimit.TryPass(now, DodgeCheckInterval)) return;
 
         Vector2 me = transform.position;
         float bestImpact = float.MaxValue;
@@ -225,7 +224,7 @@ public class AiTankController : MonoBehaviour
             if (!CanMove(candidate)) return;
         }
         dodgeDirection = candidate;
-        dodgeUntil = now + 0.3f;
+        dodgeHold.Set(now, 0.3f);
     }
 
     bool DecideMovement(float now, out Vector3 direction)
@@ -265,10 +264,10 @@ public class AiTankController : MonoBehaviour
         }
 
         //侧向绕圈：保持炮塔独立瞄准的同时让对手更难预判
-        if (now >= nextStrafeSwitch)
+        if (strafeLimit.IsDue(now))
         {
             strafeSign = -strafeSign;
-            nextStrafeSwitch = now + UnityEngine.Random.Range(0.7f, 1.4f);
+            strafeLimit.Set(now, UnityEngine.Random.Range(0.7f, 1.4f));
         }
         Vector3 perp = new Vector3(-dirTo.y, dirTo.x, 0f) * strafeSign;
         if (CanMove(perp)) { direction = perp; return true; }
@@ -282,10 +281,10 @@ public class AiTankController : MonoBehaviour
     {
         direction = Vector3.zero;
         bool goalChanged = !hasPathGoal || (pathGoal - goal).sqrMagnitude > 1.5f;
-        if (now >= nextPathTime || goalChanged)
+        if (pathLimit.IsDue(now) || goalChanged)
         {
             navigation.Repath(transform.position, goal, IsClearForTank);
-            nextPathTime = now + PathInterval;
+            pathLimit.Set(now, PathInterval);
             pathGoal = goal;
             hasPathGoal = true;
         }
@@ -331,12 +330,12 @@ public class AiTankController : MonoBehaviour
                 Vector3 aimDirection = predicted - muzzle;
                 tank.AimTurretTowards(aimDirection);
 
-                if (now >= nextFireTime && tank.Ammo > 0
+                if (fireLimit.IsDue(now) && tank.Ammo > 0
                     && Vector3.Angle(turret.up, aimDirection) <= AimTolerance
                     && IsShotPathClear(muzzle, predicted, target)
                     && MuzzleSafe())
                 {
-                    if (tank.TryFire()) nextFireTime = now + FireCooldown;
+                    if (tank.TryFire()) fireLimit.Set(now, FireCooldown);
                 }
                 return;
             }
@@ -468,22 +467,21 @@ public class AiTankController : MonoBehaviour
     //丢弃当前路径并朝随机方向侧移一小段时间，换条路继续追。
     void CheckStuck(float now)
     {
-        if (now < stuckCheckTime) return;
+        if (!stuckCheckLimit.TryPass(now, StuckCheckInterval)) return;
         float moved = Vector2.Distance(transform.position, stuckCheckPosition);
 
-        if (tryingToMove && moved < 0.2f && now >= unstuckUntil)
+        if (tryingToMove && moved < 0.2f && unstuckHold.IsDue(now))
         {
             navigation.Clear();
-            unstuckUntil = now + 0.45f;
+            unstuckHold.Set(now, 0.45f);
             Vector3 random = UnityEngine.Random.insideUnitCircle.normalized;
             Vector3 candidate = new Vector3(random.x, random.y, 0f);
             if (!CanMove(candidate)) candidate = -candidate;
             dodgeDirection = candidate;
-            dodgeUntil = now + 0.45f;
+            dodgeHold.Set(now, 0.45f);
         }
 
         stuckCheckPosition = transform.position;
-        stuckCheckTime = now + 0.5f;
     }
 
     void OnDrawGizmos()
