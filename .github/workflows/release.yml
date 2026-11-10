@@ -1,0 +1,116 @@
+name: 发布新版本
+
+# 只保留 tag 推送和手动触发：自托管 runner 会在你的电脑上执行仓库里的脚本，
+# 不要再添加 pull_request 之类来自不受信任代码的触发器。
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '手动测试用的版本号（例如 v0.1.0-test）；留空自动生成。手动运行不会创建 Release。'
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-windows:
+    # 需要在本机登记 GitHub Actions self-hosted runner（默认标签即 self-hosted / Windows / X64）。
+    runs-on: [self-hosted, Windows, X64]
+    timeout-minutes: 90
+    env:
+      # 本机 Unity 路径；若不同，在仓库 Settings → Secrets and variables → Actions → Variables
+      # 里新增 UNITY_PATH 覆盖即可。
+      UNITY_PATH: ${{ vars.UNITY_PATH || 'C:\soft\unity\save\2022.3.34f1c1\Editor\Unity.exe' }}
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 解析版本号
+        shell: powershell
+        env:
+          MANUAL_VERSION: ${{ inputs.version }}
+        run: |
+          $version = $env:GITHUB_REF_NAME
+          if ($env:GITHUB_EVENT_NAME -eq "workflow_dispatch") {
+            if (-not [string]::IsNullOrWhiteSpace($env:MANUAL_VERSION)) {
+              $version = $env:MANUAL_VERSION
+            } else {
+              $version = "v0.0.0-manual.$env:GITHUB_RUN_NUMBER"
+            }
+          }
+
+          $bundleVersion = $version -replace '^[vV]', ''
+          if ([string]::IsNullOrWhiteSpace($bundleVersion) -or $bundleVersion -notmatch '^[0-9A-Za-z._-]+$') {
+            throw "版本号不合法：$version（建议使用 v1.2.3 这类格式）"
+          }
+          $zipName = "tank-$bundleVersion-win64.zip"
+
+          $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+          [System.IO.File]::AppendAllText($env:GITHUB_ENV, "RELEASE_VERSION=$version`n", $utf8NoBom)
+          [System.IO.File]::AppendAllText($env:GITHUB_ENV, "BUNDLE_VERSION=$bundleVersion`n", $utf8NoBom)
+          [System.IO.File]::AppendAllText($env:GITHUB_ENV, "ZIP_NAME=$zipName`n", $utf8NoBom)
+          Write-Host "Tag: $version"
+          Write-Host "bundleVersion: $bundleVersion"
+          Write-Host "产物: $zipName"
+
+      - name: Unity 打包（Windows x64）
+        shell: powershell
+        run: |
+          if (-not (Test-Path $env:UNITY_PATH)) {
+            throw "找不到 Unity：$env:UNITY_PATH。请在本机安装 2022.3.34f1c1，或在仓库 Variables 里设置 UNITY_PATH。"
+          }
+
+          $unityArgs = @(
+            "-batchmode",
+            "-nographics",
+            "-quit",
+            "-projectPath", "$env:GITHUB_WORKSPACE",
+            "-executeMethod", "BuildScript.BuildWindows",
+            "-releaseVersion", "$env:BUNDLE_VERSION",
+            "-buildOutput", "$env:GITHUB_WORKSPACE\Build\Windows",
+            "-logFile", "-"
+          )
+          & $env:UNITY_PATH @unityArgs
+          if ($LASTEXITCODE -ne 0) {
+            throw "Unity 构建失败，退出码 $LASTEXITCODE"
+          }
+          if (-not (Test-Path "$env:GITHUB_WORKSPACE\Build\Windows\tank.exe")) {
+            throw "构建结束但没有找到 Build/Windows/tank.exe"
+          }
+
+      - name: 压缩产物
+        shell: powershell
+        run: |
+          Compress-Archive -Path "Build/Windows/*" -DestinationPath "$env:ZIP_NAME" -Force
+          $sizeMb = (Get-Item $env:ZIP_NAME).Length / 1MB
+          Write-Host ("产物大小: {0:N1} MB" -f $sizeMb)
+
+      - name: 上传构建产物（仅手动测试）
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tank-${{ env.BUNDLE_VERSION }}-win64
+          path: ${{ env.ZIP_NAME }}
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: 创建 GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          files: ${{ env.ZIP_NAME }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          # v1.0.0-beta.1 这类带 - 的标签自动标记为预发布。
+          prerelease: ${{ contains(github.ref_name, '-') }}

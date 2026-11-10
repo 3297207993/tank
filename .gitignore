@@ -87,3 +87,6 @@ crashlytics-build.properties
 /[Aa]ssets/Plugins/NuGet.meta
 
 .mcp.json
+
+# Release packaging output (produced by .github/workflows/release.yml)
+/tank-*-win64.zip

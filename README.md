@@ -75,6 +75,7 @@ docs/                      项目文档
 - [电脑玩家 AI](docs/ai.md)
 - [界面结构](docs/ui.md)
 - [开发与调试](docs/development.md)
+- [发布新版本](docs/release.md)
 - [坦克贴图工具](Tools/tank_art/README.md)
 
 ## 已知限制

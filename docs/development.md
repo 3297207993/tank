@@ -53,6 +53,8 @@
 3. `NetworkManager` 已勾选 `RunInBackground`，窗口失焦后仍会继续联网。
 4. 客户端和房主使用**同一份构建**即可，不需要区分的服务器包。
 
+推 `v*` 标签会自动打包并发布到 GitHub Release，runner 和许可证的准备见 [release.md](release.md)。
+
 ## 调试
 
 ### 日志
