@@ -50,7 +50,8 @@ C:\soft\unity\save\2022.3.34f1c1\Editor\Unity.exe
 
 ### 3. 确认许可证和 Windows 构建模块
 
-- 许可证：`C:\ProgramData\Unity\Unity_lic.ulf`（机器级）。如果批处理报“没有许可证”，用运行 runner 的那个 Windows 账号打开一次 Unity Hub 或编辑器刷新许可。
+- 许可证文件默认是 `C:\ProgramData\Unity\Unity_lic.ulf`（机器级）。工作流会把它复制到 runner 临时目录，再用 `-manualLicenseFile` 离线加载。这样不依赖 Unity Hub 的登录令牌，也能避开旧版 Hub 授权客户端和编辑器的协议冲突。路径不同时，在 **Settings → Secrets and variables → Actions → Variables** 新建 `UNITY_LICENSE_FILE`。
+- 许可证本身要先在 Unity Hub 里激活/续期过（中国版个人版需要定期联网续期）。如果日志出现 `Token not found in cache`、`grace period` 或 `No license activation found`，先用 **unity.cn 账号**打开 Hub 登录并续期。
 - Unity 安装时勾选 **Windows Build Support (Mono)**。
 - 电脑需要开机且 runner 在线。首次构建会重建 `Library/`，比较慢；之后会复用 runner 工作目录里的 `Library/`，速度正常。
 
@@ -80,7 +81,8 @@ git push origin v1.0.0
 | --- | --- |
 | 任务一直排队 | runner 是否在线（Settings → Actions → Runners） |
 | 找不到 Unity | 仓库变量 `UNITY_PATH` 或默认路径是否正确 |
-| 没有许可证 | `C:\ProgramData\Unity\Unity_lic.ulf`；用 runner 账号打开编辑器刷新 |
+| 没有许可证 / `Token not found in cache` | 检查 `UNITY_LICENSE_FILE` 是否存在；在 Hub 里用 unity.cn 账号登录并续期 |
+| `Unsupported protocol version`（505） | 旧版 Hub 授权客户端与编辑器不兼容；工作流已用 `-manualLicenseFile` 绕开，仍失败可更新 Unity Hub |
 | 构建失败 | 看日志里 `[Build]` 开头的行；确认 Build Settings 里的三个场景都启用 |
 | 产物缺失 | `Build/Windows/tank.exe` 是否生成；日志末尾的 `[Build]` 结果 |
 | 图形初始化相关报错 | 工作流里的 `-nographics` 在本机不合适时，删掉该参数再试 |
