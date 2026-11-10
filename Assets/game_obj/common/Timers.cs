@@ -32,3 +32,28 @@ public struct TimeGate
         return true;
     }
 }
+
+//在限定时间内保持一个值：值与到期时间绑在一起，避免分开写导致的不同步
+public struct Timed<T>
+{
+    TimeGate gate;
+    T value;
+
+    //还在有效期内就取出保持的值，否则返回 false 并给出 default
+    public bool TryGet(float now, out T current)
+    {
+        if (gate.HasTimeLeft(now))
+        {
+            current = value;
+            return true;
+        }
+        current = default;
+        return false;
+    }
+
+    public void Set(float now, float seconds, T newValue)
+    {
+        value = newValue;
+        gate.Set(now, seconds);
+    }
+}

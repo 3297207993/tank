@@ -45,8 +45,7 @@ public class AiTankController : MonoBehaviour
     Vector3 pathGoal;
     bool hasPathGoal;
 
-    Vector3 dodgeDirection;
-    TimeGate dodgeHold;
+    Timed<Vector3> dodge;
     TimeGate unstuckHold;
     TimeGate stuckCheckLimit;
     Vector3 stuckCheckPosition;
@@ -92,9 +91,8 @@ public class AiTankController : MonoBehaviour
 
         Vector3 moveDirection = Vector3.zero;
         wantsToMove = false;
-        if (dodgeHold.HasTimeLeft(now))
+        if (dodge.TryGet(now, out moveDirection))
         {
-            moveDirection = dodgeDirection;
             wantsToMove = moveDirection.sqrMagnitude > 0.0001f;
         }
         else
@@ -223,8 +221,7 @@ public class AiTankController : MonoBehaviour
             candidate = -candidate;
             if (!CanMove(candidate)) return;
         }
-        dodgeDirection = candidate;
-        dodgeHold.Set(now, 0.3f);
+        dodge.Set(now, 0.3f, candidate);
     }
 
     bool DecideMovement(float now, out Vector3 direction)
@@ -477,8 +474,7 @@ public class AiTankController : MonoBehaviour
             Vector3 random = UnityEngine.Random.insideUnitCircle.normalized;
             Vector3 candidate = new Vector3(random.x, random.y, 0f);
             if (!CanMove(candidate)) candidate = -candidate;
-            dodgeDirection = candidate;
-            dodgeHold.Set(now, 0.45f);
+            dodge.Set(now, 0.45f, candidate);
         }
 
         stuckCheckPosition = transform.position;
