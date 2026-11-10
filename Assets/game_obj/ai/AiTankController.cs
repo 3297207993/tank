@@ -464,6 +464,8 @@ public class AiTankController : MonoBehaviour
         return true;
     }
 
+    //每 0.5 秒采样一次位置，位移太小说明被墙或别的坦克卡住：
+    //丢弃当前路径并朝随机方向侧移一小段时间，换条路继续追。
     void CheckStuck(float now)
     {
         if (now < stuckCheckTime) return;
