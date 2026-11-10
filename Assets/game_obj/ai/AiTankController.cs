@@ -14,7 +14,7 @@ public class AiTankController : MonoBehaviour
     const float DodgeRadius = 0.9f;
     const float PreferredMinRange = 3.5f;
     const float PreferredMaxRange = 8.5f;
-    const float FireCooldown = 0.18f;
+    const float FireCooldown = 1.0f;
     const float AimTolerance = 0.7f;
     const float MaxInterceptTime = 2.6f;
     const float TankRadius = 0.75f;
