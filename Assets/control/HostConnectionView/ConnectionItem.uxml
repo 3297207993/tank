@@ -7,7 +7,6 @@
             <ui:Label tabindex="-1" name="role" class="player-role is-hidden" text="" parse-escape-sequences="true" />
         </ui:VisualElement>
         <ui:Label tabindex="-1" name="id" class="col-id player-id" text="ID: 0" parse-escape-sequences="true" />
-        <ui:Label tabindex="-1" name="kills" class="col-score player-score" text="0" parse-escape-sequences="true" />
         <ui:Button class="tk-btn tk-btn--danger col-kick player-kick" name="kick" text="踢出" parse-escape-sequences="true" />
     </ui:VisualElement>
 </ui:UXML>

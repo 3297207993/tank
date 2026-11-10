@@ -12,7 +12,6 @@
             <ui:VisualElement class="list-head">
                 <ui:Label tabindex="-1" class="head-cell col-name" text="玩家" parse-escape-sequences="true" />
                 <ui:Label tabindex="-1" class="head-cell col-id" text="ID" parse-escape-sequences="true" />
-                <ui:Label tabindex="-1" class="head-cell col-score" text="击杀" parse-escape-sequences="true" />
                 <ui:Label tabindex="-1" class="head-cell col-kick" text="" parse-escape-sequences="true" />
             </ui:VisualElement>
             <ui:ListView name="list" class="lobby-list" virtualization-method="FixedHeight" fixed-item-height="72" />
