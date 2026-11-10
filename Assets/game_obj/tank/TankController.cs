@@ -20,6 +20,18 @@ public class TankController : NetworkBehaviour
 
     public int Ammo => bulletCount.Value;
 
+    /// <summary>子弹初速度，取自子弹 prefab；取不到子弹时返回 0。</summary>
+    public float BulletSpeed
+    {
+        get
+        {
+            if (bulletTemplate == null && bullet != null) bulletTemplate = bullet.GetComponent<BulletController>();
+            return bulletTemplate != null ? bulletTemplate.BulletSpeed : 0f;
+        }
+    }
+
+    BulletController bulletTemplate;
+
     public override void OnNetworkSpawn()
     {
         playerId = OwnerClientId;
@@ -174,11 +186,12 @@ public class TankController : NetworkBehaviour
         GetComponent<Collider2D>().Raycast(turret.transform.up, hits);
         var hit = hits[0];
         var obj = Instantiate(bullet, turret.transform.position + turret.transform.up * Mathf.Min(hit.distance, 1.2f), turret.transform.rotation);
+        var bulletController = obj.GetComponent<BulletController>();
         //记录射手，命中时用于加分
-        obj.GetComponent<CommonBulletController>().shooterClientId = playerId;
+        bulletController.shooterClientId = playerId;
         obj.GetComponent<NetworkObject>().Spawn(true);
         bulletCount.Value -= 1;
-        Invoke(nameof(bulletCountAdd), CommonBulletController.bulletLifeTime);
+        Invoke(nameof(bulletCountAdd), bulletController.BulletLifeTime);
         return true;
     }
 
@@ -207,7 +220,7 @@ public class TankController : NetworkBehaviour
             if (IsServer)
             {
                 //给击中自己的玩家加一分（自己打中自己不算分）
-                var bulletController = collision.gameObject.GetComponent<CommonBulletController>();
+                var bulletController = collision.gameObject.GetComponent<BulletController>();
                 if (bulletController != null
                     && bulletController.shooterClientId != ulong.MaxValue
                     && bulletController.shooterClientId != playerId)

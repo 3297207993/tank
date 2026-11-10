@@ -313,6 +313,9 @@ public class AiTankController : MonoBehaviour
         tank.ApplyDrive(throttle, steer);
     }
 
+    //瞄准与开火：用子弹速度解算目标的提前量命中点，把炮塔转过去；
+    //角度误差、弹道是否被挡、炮口安全和冷却都满足时才开火。
+    //解不出提前量时先对准目标当前位置；没有目标且正在移动时炮塔保持朝车头。
     void Aim(float now)
     {
         if (target != null)
@@ -322,7 +325,7 @@ public class AiTankController : MonoBehaviour
             Vector3 spawn = muzzle + turret.up * BulletSpawnOffset;
             Vector3 predicted;
             float travelTime;
-            if (SolveIntercept(spawn, target.transform.position, targetVelocity, out predicted, out travelTime)
+            if (SolveIntercept(spawn, target.transform.position, targetVelocity, tank.BulletSpeed, out predicted, out travelTime)
                 && travelTime <= MaxInterceptTime)
             {
                 Vector3 aimDirection = predicted - muzzle;
@@ -349,10 +352,10 @@ public class AiTankController : MonoBehaviour
         }
     }
 
-    static bool SolveIntercept(Vector3 muzzle, Vector3 targetPos, Vector3 targetVel, out Vector3 point, out float time)
+    static bool SolveIntercept(Vector3 muzzle, Vector3 targetPos, Vector3 targetVel, float bulletSpeed, out Vector3 point, out float time)
     {
         Vector3 d = targetPos - muzzle;
-        float bulletSpeed = CommonBulletController.bulletSpeed;
+        if (bulletSpeed <= 0f) { point = targetPos; time = 0f; return false; }
         float a = Vector3.Dot(targetVel, targetVel) - bulletSpeed * bulletSpeed;
         float b = 2f * Vector3.Dot(d, targetVel);
         float c = Vector3.Dot(d, d);
