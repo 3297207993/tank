@@ -35,6 +35,14 @@
   - `quit` → `Application.Quit()`
 - 界面脚本只负责绑定，场景跳转集中在 `StartSceneControler`。
 
+### 封面背景
+
+- `StartView.uxml` 里 `startBg` / `startScrim` 是两个 `position: absolute` 的全屏层，排在 `card` 前面，所以卡片始终压在最上面。
+- `startBg` 的 `background-image` 指向 `Assets/control/StartScene/start_bg.png`，`-unity-background-scale-mode: scale-and-crop` 让任意 16:9 / 16:10 / 21:9 分辨率都铺满且不变形（多余部分裁掉）。
+- 背景图由 `Tools/tank_art/gen_menu_bg.py` 生成：俯视迷宫 + 两辆坦克 + 琥珀色灯，配色和坦克贴图、UI 主按钮一致。
+- 想换图时保持文件名不变、直接覆盖 PNG 即可（`.meta` 里的 GUID 不能变，USS 是按 GUID 引用的）。建议尺寸 2048×1280（16:10），更宽的比例也能用。
+- `startScrim` 是背景与卡片之间的冷色遮罩（`rgba(8, 14, 24, 0.30)`）；觉得背景太抢眼就调高不透明度，觉得太闷就调低。
+
 ## 客户端连接
 
 字段：名字、地址、端口；底部是提示文字和“确定 / 退出”。

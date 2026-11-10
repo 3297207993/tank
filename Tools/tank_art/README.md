@@ -35,3 +35,17 @@ python gen_tank_art.py --out out --format svg
 ## 配色
 
 取自 `Assets/control/style/TankTheme.uss`；琥珀 `#f2b545` 与 UI 主按钮同色。
+
+## 主菜单封面背景
+
+`gen_menu_bg.py` 生成 `Assets/control/StartScene/start_bg.png`（主菜单封面），俯视迷宫 + 两辆坦克 + 琥珀色灯，配色和坦克贴图一致。
+
+```bash
+python gen_menu_bg.py                  # 直接写入 Assets/control/StartScene/start_bg.png
+python gen_menu_bg.py --seed 3         # 换一张随机迷宫布局
+python preview_menu.py                 # 不开 Unity，预览卡片叠在封面上的效果
+```
+
+- 换图时**保留同名 `.meta` 和 GUID**，直接覆盖 PNG 即可，USS 按 GUID 引用，不需要改代码。
+- 生成器中央留空是有意的：开始菜单的卡片会盖在那里。
+- `preview_menu.py` 只是近似模拟 UI Toolkit 的排版（同样的 STKAITI 字体、PanelSettings 的 1200×800 参考分辨率），最终以 Unity 里为准。

@@ -2,6 +2,8 @@
     <Style src="project://database/Assets/control/style/TankTheme.uss?fileID=7433441132597879392&amp;guid=e133886d60d50244fbbda625fd5e2c51&amp;type=3#TankTheme" />
     <Style src="project://database/Assets/control/StartScene/StartView.uss?fileID=7433441132597879392&amp;guid=c4b55343b5f841f489de10b656fe3dc0&amp;type=3#StartView" />
     <ui:VisualElement name="root" class="tk-root start-screen">
+        <ui:VisualElement name="startBg" class="start-bg" picking-mode="Ignore" />
+        <ui:VisualElement name="startScrim" class="start-scrim" picking-mode="Ignore" />
         <ui:VisualElement name="card" class="tk-card start-card">
             <ui:Label tabindex="-1" text="坦克动荡" parse-escape-sequences="true" class="start-title" />
             <ui:Label tabindex="-1" text="和朋友来一场坦克对战" parse-escape-sequences="true" class="tk-subtitle start-subtitle" />
