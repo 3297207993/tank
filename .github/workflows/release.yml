@@ -30,6 +30,8 @@ jobs:
       # 本机 Unity 路径；若不同，在仓库 Settings → Secrets and variables → Actions → Variables
       # 里新增 UNITY_PATH 覆盖即可。
       UNITY_PATH: ${{ vars.UNITY_PATH || 'C:\soft\unity\save\2022.3.34f1c1\Editor\Unity.exe' }}
+      # 许可证文件路径，同样可以用仓库变量 UNITY_LICENSE_FILE 覆盖。
+      UNITY_LICENSE_FILE: ${{ vars.UNITY_LICENSE_FILE || 'C:\ProgramData\Unity\Unity_lic.ulf' }}
     steps:
       - name: 检出代码
         uses: actions/checkout@v5
@@ -64,12 +66,21 @@ jobs:
           Write-Host "bundleVersion: $bundleVersion"
           Write-Host "Zip: $zipName"
 
+      # 把 ULF 复制到临时文件再传给 -manualLicenseFile：
+      # 授权客户端会锁住原文件，直接传原路径会报“文件被另一个进程占用”。
+      # 这样即使 Unity Hub 的授权客户端版本不兼容，也能离线加载许可证。
       - name: Unity 打包（Windows x64）
         shell: powershell
         run: |
           if (-not (Test-Path $env:UNITY_PATH)) {
             throw "Unity not found: $env:UNITY_PATH. Install 2022.3.34f1c1 or set UNITY_PATH in repository Variables."
           }
+          if (-not (Test-Path $env:UNITY_LICENSE_FILE)) {
+            throw "Unity license file not found: $env:UNITY_LICENSE_FILE. Activate the license in Unity Hub or set UNITY_LICENSE_FILE in repository Variables."
+          }
+
+          $licenseCopy = Join-Path $env:RUNNER_TEMP "Unity_lic.ulf"
+          Copy-Item -LiteralPath $env:UNITY_LICENSE_FILE -Destination $licenseCopy -Force
 
           $unityArgs = @(
             "-batchmode",
@@ -79,6 +90,7 @@ jobs:
             "-executeMethod", "BuildScript.BuildWindows",
             "-releaseVersion", "$env:BUNDLE_VERSION",
             "-buildOutput", "$env:GITHUB_WORKSPACE\Build\Windows",
+            "-manualLicenseFile", "$licenseCopy",
             "-logFile", "-"
           )
           & $env:UNITY_PATH @unityArgs
