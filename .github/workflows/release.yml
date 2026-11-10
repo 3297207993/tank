@@ -104,6 +104,30 @@ jobs:
           }
           Write-Host "License copy: $licenseCopy ($($licenseBytes.Length) bytes)"
 
+          function Invoke-Unity([string[]]$unityArguments) {
+            $quotedArgs = foreach ($arg in $unityArguments) {
+              if ($arg -match "\s") { '"' + $arg + '"' } else { $arg }
+            }
+            $process = Start-Process -FilePath $env:UNITY_PATH -ArgumentList ($quotedArgs -join " ") -NoNewWindow -Wait -PassThru
+            return $process.ExitCode
+          }
+
+          # Step 1: activate the license. -manualLicenseFile makes Unity exit
+          # after loading the license, so it cannot share the build launch.
+          $activateArgs = @(
+            "-batchmode",
+            "-quit",
+            "-projectPath", "$env:GITHUB_WORKSPACE",
+            "-manualLicenseFile", "$licenseCopy",
+            "-logFile", "-"
+          )
+          Write-Host ("Activate args: " + ($activateArgs -join " "))
+          $activateExit = Invoke-Unity $activateArgs
+          if ($activateExit -ne 0) {
+            throw "Unity license activation failed with exit code $activateExit"
+          }
+
+          # Step 2: launch the build separately without -manualLicenseFile.
           $unityArgs = @(
             "-batchmode",
             "-quit",
@@ -111,13 +135,12 @@ jobs:
             "-executeMethod", "BuildScript.BuildWindows",
             "-releaseVersion", "$env:BUNDLE_VERSION",
             "-buildOutput", "$env:GITHUB_WORKSPACE\Build\Windows",
-            "-manualLicenseFile", "$licenseCopy",
             "-logFile", "-"
           )
           Write-Host ("Unity args: " + ($unityArgs -join " "))
-          & $env:UNITY_PATH @unityArgs
-          if ($LASTEXITCODE -ne 0) {
-            throw "Unity build failed with exit code $LASTEXITCODE"
+          $buildExit = Invoke-Unity $unityArgs
+          if ($buildExit -ne 0) {
+            throw "Unity build failed with exit code $buildExit"
           }
           if (-not (Test-Path "$env:GITHUB_WORKSPACE\Build\Windows\tank.exe")) {
             throw "Build finished but Build/Windows/tank.exe was not found"

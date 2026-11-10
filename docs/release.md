@@ -50,7 +50,7 @@ C:\soft\unity\save\2022.3.34f1c1\Editor\Unity.exe
 
 ### 3. 确认许可证和 Windows 构建模块
 
-- 许可证文件默认是 `C:\ProgramData\Unity\Unity_lic.ulf`（机器级）。工作流会把它复制到 runner 临时目录，再用 `-manualLicenseFile` 离线加载。这样不依赖 Unity Hub 的登录令牌，也能避开旧版 Hub 授权客户端和编辑器的协议冲突。路径不同时，在 **Settings → Secrets and variables → Actions → Variables** 新建 `UNITY_LICENSE_FILE`。
+- 许可证文件默认是 `C:\ProgramData\Unity\Unity_lic.ulf`（机器级）。工作流会把它复制到工程内的 `Build/`，先启动一次 Unity 用 `-manualLicenseFile` 激活（这一步加载完许可证就会退出），再单独启动一次 Unity 执行构建。这样不依赖 Unity Hub 的登录令牌，也能避开旧版 Hub 授权客户端和编辑器的协议冲突。路径不同时，在 **Settings → Secrets and variables → Actions → Variables** 新建 `UNITY_LICENSE_FILE`。
 - 许可证本身要先在 Unity Hub 里激活/续期过（中国版个人版需要定期联网续期）。如果日志出现 `Token not found in cache`、`grace period` 或 `No license activation found`，先用 **unity.cn 账号**打开 Hub 登录并续期。
 - Unity 安装时勾选 **Windows Build Support (Mono)**。
 - 电脑需要开机且 runner 在线。首次构建会重建 `Library/`，比较慢；之后会复用 runner 工作目录里的 `Library/`，速度正常。
