@@ -90,3 +90,6 @@ crashlytics-build.properties
 
 # Release packaging output (produced by .github/workflows/release.yml)
 /tank-*-win64.zip
+
+# GitHub Actions self-hosted runner (if installed inside the project folder)
+/actions-runner/

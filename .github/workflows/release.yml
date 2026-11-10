@@ -32,12 +32,14 @@ jobs:
       UNITY_PATH: ${{ vars.UNITY_PATH || 'C:\soft\unity\save\2022.3.34f1c1\Editor\Unity.exe' }}
     steps:
       - name: 检出代码
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: 解析版本号
         shell: powershell
         env:
           MANUAL_VERSION: ${{ inputs.version }}
+        # 注意：run 脚本必须是纯 ASCII。Windows PowerShell 5.1 会把 runner 写出的
+        # UTF-8 无 BOM 脚本按系统 ANSI 编码读取，中文会导致解析失败。
         run: |
           $version = $env:GITHUB_REF_NAME
           if ($env:GITHUB_EVENT_NAME -eq "workflow_dispatch") {
@@ -50,7 +52,7 @@ jobs:
 
           $bundleVersion = $version -replace '^[vV]', ''
           if ([string]::IsNullOrWhiteSpace($bundleVersion) -or $bundleVersion -notmatch '^[0-9A-Za-z._-]+$') {
-            throw "版本号不合法：$version（建议使用 v1.2.3 这类格式）"
+            throw "Invalid version: $version (expected a value like v1.2.3)"
           }
           $zipName = "tank-$bundleVersion-win64.zip"
 
@@ -60,13 +62,13 @@ jobs:
           [System.IO.File]::AppendAllText($env:GITHUB_ENV, "ZIP_NAME=$zipName`n", $utf8NoBom)
           Write-Host "Tag: $version"
           Write-Host "bundleVersion: $bundleVersion"
-          Write-Host "产物: $zipName"
+          Write-Host "Zip: $zipName"
 
       - name: Unity 打包（Windows x64）
         shell: powershell
         run: |
           if (-not (Test-Path $env:UNITY_PATH)) {
-            throw "找不到 Unity：$env:UNITY_PATH。请在本机安装 2022.3.34f1c1，或在仓库 Variables 里设置 UNITY_PATH。"
+            throw "Unity not found: $env:UNITY_PATH. Install 2022.3.34f1c1 or set UNITY_PATH in repository Variables."
           }
 
           $unityArgs = @(
@@ -81,10 +83,10 @@ jobs:
           )
           & $env:UNITY_PATH @unityArgs
           if ($LASTEXITCODE -ne 0) {
-            throw "Unity 构建失败，退出码 $LASTEXITCODE"
+            throw "Unity build failed with exit code $LASTEXITCODE"
           }
           if (-not (Test-Path "$env:GITHUB_WORKSPACE\Build\Windows\tank.exe")) {
-            throw "构建结束但没有找到 Build/Windows/tank.exe"
+            throw "Build finished but Build/Windows/tank.exe was not found"
           }
 
       - name: 压缩产物
@@ -92,7 +94,7 @@ jobs:
         run: |
           Compress-Archive -Path "Build/Windows/*" -DestinationPath "$env:ZIP_NAME" -Force
           $sizeMb = (Get-Item $env:ZIP_NAME).Length / 1MB
-          Write-Host ("产物大小: {0:N1} MB" -f $sizeMb)
+          Write-Host ("Zip size: {0:N1} MB" -f $sizeMb)
 
       - name: 上传构建产物（仅手动测试）
         if: github.event_name == 'workflow_dispatch'
