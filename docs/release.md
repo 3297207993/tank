@@ -55,6 +55,18 @@ C:\soft\unity\save\2022.3.34f1c1\Editor\Unity.exe
 - Unity 安装时勾选 **Windows Build Support (Mono)**。
 - 电脑需要开机且 runner 在线。首次构建会重建 `Library/`，比较慢；之后会复用 runner 工作目录里的 `Library/`，速度正常。
 
+### 4. 关于 Unity MCP（开发依赖）
+
+`com.ivanmurzak.unity.mcp` 只是本地开发用的 AI 编辑工具，游戏代码没有引用它。它的 NuGet DLL 自动还原在 `Assets/Plugins/NuGet/`，该目录已被 `.gitignore` 忽略——**不需要也不应该提交这些 DLL**。
+
+Unity 没有 devDependencies 的概念，manifest 里的包都会在构建时编译；CI 没有 NuGet DLL 就会编译失败。因此工作流会在构建前临时从 runner 工作区的 `Packages/manifest.json` 和 `packages-lock.json` 中移除这个包：
+
+- 只修改 runner 里的 checkout，不会提交回仓库；
+- 本地开发仍然保留 MCP；
+- 发布包也不会带上这个编辑器工具。
+
+如果以后游戏运行时代码真的要用 MCP，再改为提交 NuGet DLL，或在 CI 里先执行该包的 NuGet 还原。
+
 ## 发布
 
 ```bash

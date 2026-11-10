@@ -36,6 +36,31 @@ jobs:
       - name: 检出代码
         uses: actions/checkout@v5
 
+      # Unity MCP 只是本地开发用的 AI 工具，它的 NuGet DLL 被 gitignore 了，
+      # CI 里无法编译。构建前从 manifest / lock 中移除（只改 runner 工作区，
+      # 不会提交回仓库），游戏代码没有引用它。
+      - name: 移除仅开发用的 Unity MCP 包
+        shell: powershell
+        run: |
+          $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+          $manifestPath = Join-Path $env:GITHUB_WORKSPACE "Packages\manifest.json"
+          $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+          if ($manifest.dependencies.PSObject.Properties.Name -contains "com.ivanmurzak.unity.mcp") {
+            $manifest.dependencies.PSObject.Properties.Remove("com.ivanmurzak.unity.mcp")
+            [System.IO.File]::WriteAllText($manifestPath, ($manifest | ConvertTo-Json -Depth 20), $utf8NoBom)
+            Write-Host "Removed com.ivanmurzak.unity.mcp from Packages/manifest.json (CI only)."
+          }
+
+          $lockPath = Join-Path $env:GITHUB_WORKSPACE "Packages\packages-lock.json"
+          if (Test-Path $lockPath) {
+            $lock = Get-Content -LiteralPath $lockPath -Raw | ConvertFrom-Json
+            if ($lock.dependencies.PSObject.Properties.Name -contains "com.ivanmurzak.unity.mcp") {
+              $lock.dependencies.PSObject.Properties.Remove("com.ivanmurzak.unity.mcp")
+              [System.IO.File]::WriteAllText($lockPath, ($lock | ConvertTo-Json -Depth 20), $utf8NoBom)
+              Write-Host "Removed com.ivanmurzak.unity.mcp from Packages/packages-lock.json (CI only)."
+            }
+          }
+
       - name: 解析版本号
         shell: powershell
         env:
