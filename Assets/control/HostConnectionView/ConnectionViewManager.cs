@@ -169,7 +169,7 @@ public class ConnectionViewManager : NetworkBehaviour
     {
         gameStarted = true;
         Show(false);
-        //按“开始”视为开新一局，分数清零
+        //按“开始”视为开新一局，战绩清零
         if (IsServer) playerListManager.ClearScores();
         ResetMap();
     }

@@ -80,7 +80,8 @@ Gizmos 只在服务器进程里有意义。
 | 坦克不动 | `TankController.FixedUpdate`、`FixedNetworkTransform` 是否挂上 |
 | 炮塔不同步 | `TankController.SyncTurretAngle`、`turretAngle` 的写权限 |
 | 电脑不动 | `AiTankController.Initialize` 是否在服务器、`CurrentMap` 是否为空 |
-| 分数不对 | `TankController.OnCollisionEnter2D`、`PlayerListManager.AddScore` |
+| 击杀/死亡不对 | `TankController.OnCollisionEnter2D`、`PlayerListManager.AddKill` / `AddDeath` |
+| 最终存活不对 | `MapGenerator.EndRound` / `AwardSurvivals`、`ResetAndGenerateLater` 的 2 秒延迟 |
 
 ## 代码约定
 
@@ -135,8 +136,8 @@ Gizmos 只在服务器进程里有意义。
 - [ ] 添加电脑后，双方列表都出现“电脑 N”。
 - [ ] 点“开始”后，双方都看到同一张地图，相机取景正确。
 - [ ] 驾驶、炮塔旋转、开火正常。
-- [ ] 子弹能反弹，命中后加分、爆炸、坦克消失。
-- [ ] 只剩 1 辆坦克时，2 秒后自动重开新地图。
+- [ ] 子弹能反弹，命中后击杀/死亡各 +1、爆炸、坦克消失。
+- [ ] 只剩 1 辆坦克时，2 秒后自动重开新地图，幸存者的最终存活 +1。
 - [ ] `Esc` 能开关大厅和计分板，且两者不抢按键。
 - [ ] 踢真人和踢电脑都生效。
 - [ ] 客户端中途退出，服务器列表移除该玩家。

@@ -187,7 +187,7 @@ public class TankController : NetworkBehaviour
         var hit = hits[0];
         var obj = Instantiate(bullet, turret.transform.position + turret.transform.up * Mathf.Min(hit.distance, 1.2f), turret.transform.rotation);
         var bulletController = obj.GetComponent<BulletController>();
-        //记录射手，命中时用于加分
+        //记录射手，命中时用于记击杀
         bulletController.shooterClientId = playerId;
         obj.GetComponent<NetworkObject>().Spawn(true);
         bulletCount.Value -= 1;
@@ -219,14 +219,19 @@ public class TankController : NetworkBehaviour
         {
             if (IsServer)
             {
-                //给击中自己的玩家加一分（自己打中自己不算分）
-                var bulletController = collision.gameObject.GetComponent<BulletController>();
-                if (bulletController != null
-                    && bulletController.shooterClientId != ulong.MaxValue
-                    && bulletController.shooterClientId != playerId)
+                var playerListManager = FindObjectOfType<PlayerListManager>();
+                if (playerListManager != null)
                 {
-                    var playerListManager = FindObjectOfType<PlayerListManager>();
-                    if (playerListManager != null) playerListManager.AddScore(bulletController.shooterClientId);
+                    //击杀记给射手；自己打中自己不算击杀
+                    var bulletController = collision.gameObject.GetComponent<BulletController>();
+                    if (bulletController != null
+                        && bulletController.shooterClientId != ulong.MaxValue
+                        && bulletController.shooterClientId != playerId)
+                    {
+                        playerListManager.AddKill(bulletController.shooterClientId);
+                    }
+                    //不管是死在谁手里，被击中的坦克都记一次死亡
+                    playerListManager.AddDeath(playerId);
                 }
 
                 if (GameObject.FindGameObjectsWithTag("Tank").Length <= 2)

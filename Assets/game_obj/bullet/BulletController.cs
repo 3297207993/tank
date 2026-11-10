@@ -6,7 +6,7 @@ using UnityEngine;
 /// </summary>
 public abstract class BulletController : NetworkBehaviour
 {
-    //由服务器在 Spawn 之前写入，用于命中时给射手加分（只在服务器使用，不需要同步）
+    //由服务器在 Spawn 之前写入，用于命中时给射手记击杀（只在服务器使用，不需要同步）
     [System.NonSerialized] public ulong shooterClientId = ulong.MaxValue;
 
     /// <summary>子弹初速度，坦克用它解算射击提前量。由具体子弹类型提供。</summary>

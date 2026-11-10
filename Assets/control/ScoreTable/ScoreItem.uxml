@@ -4,6 +4,8 @@
     <ui:VisualElement name="row" class="score-row">
         <ui:Label tabindex="-1" name="rank" class="scol-rank score-rank" text="1" parse-escape-sequences="true" />
         <ui:Label tabindex="-1" name="name" class="scol-name score-name" text="玩家" parse-escape-sequences="true" display-tooltip-when-elided="true" />
-        <ui:Label tabindex="-1" name="score" class="scol-score score-value" text="0" parse-escape-sequences="true" />
+        <ui:Label tabindex="-1" name="kills" class="scol-kills score-stat score-kills" text="0" parse-escape-sequences="true" />
+        <ui:Label tabindex="-1" name="deaths" class="scol-deaths score-stat score-deaths" text="0" parse-escape-sequences="true" />
+        <ui:Label tabindex="-1" name="survivals" class="scol-survivals score-stat score-survivals" text="0" parse-escape-sequences="true" />
     </ui:VisualElement>
 </ui:UXML>

@@ -10,7 +10,7 @@
 }
 
 .score-board {
-    width: 640px;
+    width: 780px;
     max-height: 92%;
     overflow: hidden;
     margin: 24px;
@@ -44,7 +44,7 @@
 
 /* 列宽：表头和行共用 */
 .scol-rank {
-    width: 90px;
+    width: 80px;
     flex-shrink: 0;
     -unity-text-align: middle-center;
 }
@@ -54,8 +54,11 @@
     flex-shrink: 1;
 }
 
-.scol-score {
-    width: 120px;
+/* 三项战绩列共用宽度，表头和行通过同名类对齐 */
+.scol-kills,
+.scol-deaths,
+.scol-survivals {
+    width: 92px;
     flex-shrink: 0;
     -unity-text-align: middle-right;
 }
@@ -109,9 +112,21 @@
     color: rgb(235, 235, 235);
 }
 
-.score-value {
-    font-size: 30px;
+.score-stat {
+    font-size: 28px;
+}
+
+/* 击杀用强调色，死亡弱化，最终存活用绿色区分 */
+.score-kills {
     color: rgb(242, 181, 68);
+}
+
+.score-deaths {
+    color: rgba(244, 239, 228, 0.55);
+}
+
+.score-survivals {
+    color: rgb(134, 203, 157);
 }
 
 .score-close {

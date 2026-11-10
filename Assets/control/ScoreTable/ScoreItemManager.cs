@@ -1,6 +1,6 @@
 using UnityEngine.UIElements;
 
-//计分板里的一行：排名 / 玩家名 / 分数
+//计分板里的一行：排名 / 玩家名 / 击杀 / 死亡 / 最终存活
 public class ScoreItemManager
 {
     readonly PlayerListManager.ClientData data;
@@ -26,7 +26,9 @@ public class ScoreItemManager
         var name = data.name.ToString();
         element.Q<Label>("name").text = string.IsNullOrEmpty(name) ? $"玩家 {data.clientId}" : name;
 
-        element.Q<Label>("score").text = data.score.ToString();
+        element.Q<Label>("kills").text = data.kills.ToString();
+        element.Q<Label>("deaths").text = data.deaths.ToString();
+        element.Q<Label>("survivals").text = data.survivals.ToString();
 
         element.Q<VisualElement>("row").EnableInClassList("score-row--local", isLocalPlayer);
     }

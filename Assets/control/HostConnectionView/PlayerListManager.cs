@@ -9,19 +9,26 @@ public class PlayerListManager:NetworkBehaviour
     {
         public ulong clientId;
         public FixedString64Bytes name;
-        public int score;
+        //战绩三项分开累计，计分板分别展示
+        public int kills;
+        public int deaths;
+        public int survivals;
         public bool isBot;
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
             serializer.SerializeValue(ref clientId);
             serializer.SerializeValue(ref name);
-            serializer.SerializeValue(ref score);
+            serializer.SerializeValue(ref kills);
+            serializer.SerializeValue(ref deaths);
+            serializer.SerializeValue(ref survivals);
             serializer.SerializeValue(ref isBot);
         }
 
         public bool Equals(ClientData other)
         {
-            return clientId == other.clientId && name.Equals(other.name) && score == other.score && isBot == other.isBot;
+            return clientId == other.clientId && name.Equals(other.name)
+                && kills == other.kills && deaths == other.deaths && survivals == other.survivals
+                && isBot == other.isBot;
         }
 
         public override bool Equals(object obj)
@@ -31,7 +38,7 @@ public class PlayerListManager:NetworkBehaviour
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(clientId, name, score, isBot);
+            return HashCode.Combine(clientId, name, kills, deaths, survivals, isBot);
         }
     }
 
@@ -78,23 +85,46 @@ public class PlayerListManager:NetworkBehaviour
     }
 
     /// <summary>
-    /// 给指定玩家加分。只能由服务器调用，NetworkList 会自动同步给所有客户端。
+    /// 给指定玩家记一次击杀。只能由服务器调用，NetworkList 会自动同步给所有客户端。
     /// </summary>
-    public void AddScore(ulong clientId, int amount = 1)
+    public void AddKill(ulong clientId, int amount = 1)
+    {
+        ChangeStats(clientId, amount, 0, 0);
+    }
+
+    /// <summary>
+    /// 给指定玩家记一次死亡。只能由服务器调用。
+    /// </summary>
+    public void AddDeath(ulong clientId, int amount = 1)
+    {
+        ChangeStats(clientId, 0, amount, 0);
+    }
+
+    /// <summary>
+    /// 给指定玩家记一次最终存活（一局结束时活到切图前）。只能由服务器调用。
+    /// </summary>
+    public void AddSurvival(ulong clientId, int amount = 1)
+    {
+        ChangeStats(clientId, 0, 0, amount);
+    }
+
+    void ChangeStats(ulong clientId, int kills, int deaths, int survivals)
     {
         if (!IsServer) return;
         for (int i = 0; i < PlayerList.Count; i++)
         {
             if (PlayerList[i].clientId != clientId) continue;
             var data = PlayerList[i];
-            data.score += amount;
+            data.kills += kills;
+            data.deaths += deaths;
+            data.survivals += survivals;
             PlayerList[i] = data;
             return;
         }
     }
 
     /// <summary>
-    /// 清空所有玩家的分数（开始新一局时调用）。
+    /// 清空所有玩家的战绩（房主点“开始”开新一局时调用）。
     /// </summary>
     public void ClearScores()
     {
@@ -102,8 +132,10 @@ public class PlayerListManager:NetworkBehaviour
         for (int i = 0; i < PlayerList.Count; i++)
         {
             var data = PlayerList[i];
-            if (data.score == 0) continue;
-            data.score = 0;
+            if (data.kills == 0 && data.deaths == 0 && data.survivals == 0) continue;
+            data.kills = 0;
+            data.deaths = 0;
+            data.survivals = 0;
             PlayerList[i] = data;
         }
     }

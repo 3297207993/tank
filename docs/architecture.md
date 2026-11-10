@@ -34,9 +34,9 @@ flowchart TD
 | --- | --- | --- |
 | `NetworkManager` | `NetworkManager` + `UnityTransport` | 网络单例、传输、预制体注册；`DontDestroyOnLoad` |
 | `MapManager` | `NetworkObject` + `MapGenerator` | 随机地图生成、坦克/路障/子弹的清理与重新生成、相机取景 |
-| `PlayerListManager` | `NetworkObject` + `PlayerListManager` | 维护 `NetworkList<ClientData>`（名字、分数、是否电脑）、加分、加/删电脑 |
+| `PlayerListManager` | `NetworkObject` + `PlayerListManager` | 维护 `NetworkList<ClientData>`（名字、击杀/死亡/存活、是否电脑）、记战绩、加/删电脑 |
 | `ConnectionView` | `UIDocument` + `NetworkObject` + `ConnectionViewManager` | 大厅：玩家列表、踢人、添加电脑、开始游戏 |
-| `ScoreView` | `UIDocument` + `ScoreViewManager` | 计分板：按分数排序、名次高亮 |
+| `ScoreView` | `UIDocument` + `ScoreViewManager` | 计分板：按击杀排序、展示三项战绩、名次高亮 |
 | `Canvas` | UGUI + `HostTopCanvasManager` | 游戏内顶部两个按钮（用户列表 / 计分板），按钮事件在场景里通过 `OnClick` 绑定 |
 | `MapContainer` | `NetworkObject` + `NetworkTransform` | 所有路障的父节点，重置地图时整体清理 |
 | `NetworkLifeTimeHolder` | `HostController` | 延迟 0.1 秒调用 `StartHost()`；销毁时关闭并销毁 `NetworkManager` |
@@ -99,8 +99,9 @@ flowchart LR
     HT -->|显示面板| SC
     TK --> FNT
     TK --> BL
-    TK -->|命中后加分| PL
+    TK -->|命中后记击杀/死亡| PL
     TK -->|只剩 1 辆时重置| MG
+    MG -->|一局结束结算最终存活| PL
     MG -->|创建坦克 / 路障| TK
     AIT --> TK
     AIT --> AIN
@@ -133,8 +134,9 @@ sequenceDiagram
     S->>S: StartBotBrains：给电脑坦克挂 AI
     S-->>C: SetCameraData_ClientRpc（相机取景）
 
-    Note over S: 战斗中：开火、命中、加分、销毁全部在服务器判定
-    S->>S: 坦克被击中，若场上将只剩 1 辆 → 2 秒后 ResetAndGenerate()
+    Note over S: 战斗中：开火、命中、记击杀/死亡、销毁全部在服务器判定
+    S->>S: 坦克被击中，若场上将只剩 1 辆 → 2 秒后 EndRound()
+    S->>S: EndRound：切图前给仍在场的坦克记最终存活，再 ResetAndGenerate()
 ```
 
 ## 数据所有权
@@ -144,7 +146,7 @@ sequenceDiagram
 | 坦克位置 / 朝向 | 客户端预测，服务器转发 | 所有客户端 | `FixedNetworkTransform` |
 | 炮塔角度 | 服务器 | 所有客户端 | `NetworkVariable<float> turretAngle`，初始 270 |
 | 弹药数 | 服务器 | 所有客户端 | `NetworkVariable<int> bulletCount`，初始 5 |
-| 玩家列表 / 分数 | 服务器 | 所有客户端 | `NetworkList<ClientData>` |
+| 玩家列表 / 战绩 | 服务器 | 所有客户端 | `NetworkList<ClientData>` |
 | 地图格子数据 | 服务器 | 仅服务器（AI 用） | `MapGenerator.CurrentMap`；客户端只看到同步出来的路障 |
 | 子弹 | 服务器生成 | 所有客户端 | 子弹是 `NetworkObject`，物理表现各端本地跑 |
 
@@ -154,10 +156,10 @@ sequenceDiagram
    需要“客户端立刻响应输入 + 服务器定期校准”的手感。客户端把每次位移/旋转当成一个不可靠 RPC 发给服务器，同时本地先应用；服务器按 20 Hz 广播权威快照，客户端把尚未被快照确认的本地增量重新叠回去。细节见 [network.md](network.md#fixednetworktransform)。
 
 2. **电脑玩家是“虚拟客户端”**
-   电脑玩家没有真实连接，用高位 id（`1UL << 63` 起）混在 `PlayerList` 里。服务器直接 `Spawn` 一辆非玩家对象的坦克，再挂 `AiTankController`。这样计分、列表、踢人逻辑对真人和电脑可以共用。
+   电脑玩家没有真实连接，用高位 id（`1UL << 63` 起）混在 `PlayerList` 里。服务器直接 `Spawn` 一辆非玩家对象的坦克，再挂 `AiTankController`。这样战绩、列表、踢人逻辑对真人和电脑可以共用。
 
 3. **战斗判定服务器权威**
-   开火、子弹生成、命中、加分、销毁坦克都只在服务器执行。客户端只发“我想开火”的请求。
+   开火、子弹生成、命中、记击杀/死亡、结算最终存活、销毁坦克都只在服务器执行。客户端只发“我想开火”的请求。
 
 4. **Host 场景同时是客户端的游戏场景**
    利用 Netcode 的场景同步，客户端连上后直接进入 Host 场景，省去“游戏场景再同步一次”的复杂度。

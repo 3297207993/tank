@@ -5,11 +5,13 @@
         <ui:VisualElement name="scrim" class="score-scrim" picking-mode="Ignore" />
         <ui:VisualElement name="board" class="tk-card score-board">
             <ui:Label tabindex="-1" class="tk-title score-title" text="计分板" parse-escape-sequences="true" />
-            <ui:Label tabindex="-1" class="tk-subtitle score-subtitle" text="按分数从高到低排列" parse-escape-sequences="true" />
+            <ui:Label tabindex="-1" class="tk-subtitle score-subtitle" text="先比击杀，再比存活；死亡越少越靠前" parse-escape-sequences="true" />
             <ui:VisualElement class="score-head">
                 <ui:Label tabindex="-1" class="head-cell scol-rank" text="排名" parse-escape-sequences="true" />
                 <ui:Label tabindex="-1" class="head-cell scol-name" text="玩家" parse-escape-sequences="true" />
-                <ui:Label tabindex="-1" class="head-cell scol-score" text="分数" parse-escape-sequences="true" />
+                <ui:Label tabindex="-1" class="head-cell scol-kills" text="击杀" parse-escape-sequences="true" />
+                <ui:Label tabindex="-1" class="head-cell scol-deaths" text="死亡" parse-escape-sequences="true" />
+                <ui:Label tabindex="-1" class="head-cell scol-survivals" text="存活" parse-escape-sequences="true" />
             </ui:VisualElement>
             <ui:ListView name="list" class="score-list" virtualization-method="FixedHeight" fixed-item-height="66" />
             <ui:Button class="tk-btn tk-btn--ghost score-close" name="close" text="返回" parse-escape-sequences="true" />

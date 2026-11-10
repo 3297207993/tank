@@ -98,7 +98,7 @@ sequenceDiagram
 | --- | --- | --- | --- | --- |
 | `TankController.Ammo` | `NetworkVariable<int>` | 5 | Server | 每辆坦克独立；开火 -1，30 秒后 +1 |
 | `TankController` | `NetworkVariable<float>` | 270 | Server | 炮塔本地 z 角；每 0.25 秒兜底写一次 |
-| `PlayerListManager.PlayerList` | `NetworkList<ClientData>` | — | Server | 玩家名、分数、是否电脑 |
+| `PlayerListManager.PlayerList` | `NetworkList<ClientData>` | — | Server | 玩家名、击杀/死亡/存活、是否电脑 |
 
 炮塔角度为什么初始是 270：预制体里炮塔绕 z 轴转了 -90°，270 和 -90 是同一个朝向。初值设成 270 可以避免刚加入的客户端先把炮塔掰到 0°。
 
@@ -168,20 +168,25 @@ sequenceDiagram
 - `applyMatrix` 里用 `matrix.lossyScale` 设置 `transform.localScale`。当传入的是“合成后的矩阵”时，缩放会被重置为 1；`setScale` 目前没有调用方，所以暂时不影响玩法。
 - 没有插值：其他客户端按 20 Hz 直接套用快照，低帧率或丢包时看起来会跳。
 
-## 玩家列表与计分同步
+## 玩家列表与战绩同步
 
 `ClientData` 是 `INetworkSerializable` 结构体：
 
 ```csharp
 ulong clientId;
 FixedString64Bytes name;
-int score;
+int kills;
+int deaths;
+int survivals;
 bool isBot;
 ```
 
 - `NetworkList` 只由服务器写，增删改会自动同步到所有客户端。
-- `AddScore(clientId)`：服务器遍历列表，给对应条目 +1。
-- `ClearScores()`：房主点“开始”时清零，视为开新一局。
+- `AddKill(clientId)`：击毁别人时给射手 +1。
+- `AddDeath(clientId)`：自己的坦克被击毁时 +1。
+- `AddSurvival(clientId)`：一局结束、切图前仍在场的坦克 +1。
+- 三个方法都走同一个 `ChangeStats`，只改对应的一项。
+- `ClearScores()`：房主点“开始”时把三项全部清零，视为开新一场。
 - 电脑玩家 id 从 `1UL << 63` 开始递增，避免和真实连接 id 冲突；名字默认“电脑 N”。
 - 踢人：
   - 真人：`NetworkManager.DisconnectClient(clientId)`。

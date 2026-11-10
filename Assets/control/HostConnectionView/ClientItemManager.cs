@@ -15,8 +15,9 @@ public class ClientItemManager
         label.text = data.name.ToString();
         var id = element.Q<Label>("id");
         id.text = data.isBot ? "电脑" : "ID: " + data.clientId;
-        var score = element.Q<Label>("score");
-        if (score != null) score.text = data.score.ToString();
+        //大厅里只展示击杀，详细战绩看计分板
+        var kills = element.Q<Label>("kills");
+        if (kills != null) kills.text = data.kills.ToString();
 
         var localId = NetworkManager.Singleton.LocalClientId;
         var isLocal = localId == data.clientId;

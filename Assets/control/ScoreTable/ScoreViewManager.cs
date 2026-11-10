@@ -4,7 +4,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-//计分板：按分数从高到低显示所有玩家
+//计分板：显示所有玩家的击杀 / 死亡 / 最终存活，按击杀从高到低排列
 public class ScoreViewManager : MonoBehaviour
 {
     public VisualTreeAsset item;
@@ -60,7 +60,7 @@ public class ScoreViewManager : MonoBehaviour
     //Esc 由 ConnectionViewManager 统一处理，这里只负责刷新和显隐
     void OnPlayerListChanged(NetworkListEvent<PlayerListManager.ClientData> changeEvent)
     {
-        //分数变了要重新排序，必须整个重建；单纯改名/上下线也重建，列表最多十几个人，开销可以忽略
+        //战绩变了要重新排序，必须整个重建；单纯改名/上下线也重建，列表最多十几个人，开销可以忽略
         RefreshRanking();
     }
 
@@ -78,8 +78,13 @@ public class ScoreViewManager : MonoBehaviour
         foreach (var data in playerListManager.PlayerList) ranking.Add(data);
         ranking.Sort((a, b) =>
         {
-            int byScore = b.score.CompareTo(a.score);
-            return byScore != 0 ? byScore : a.clientId.CompareTo(b.clientId);
+            //先比击杀，再比最终存活，死亡少的靠前，最后按 clientId 稳定排序
+            int byKills = b.kills.CompareTo(a.kills);
+            if (byKills != 0) return byKills;
+            int bySurvivals = b.survivals.CompareTo(a.survivals);
+            if (bySurvivals != 0) return bySurvivals;
+            int byDeaths = a.deaths.CompareTo(b.deaths);
+            return byDeaths != 0 ? byDeaths : a.clientId.CompareTo(b.clientId);
         });
 
         if (list != null) list.RefreshItems();

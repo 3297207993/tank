@@ -61,6 +61,8 @@ public class MapGenerator : NetworkBehaviour
 
     public void ResetAndGenerate()
     {
+        //房主中途按“开始”会直接重开，取消可能还挂着的本局结算
+        CancelInvoke(nameof(EndRound));
         ResetMap();
         GenerateMap();
         StartBotBrains();
@@ -82,8 +84,30 @@ public class MapGenerator : NetworkBehaviour
 
     public void ResetAndGenerateLater(float delay)
     {
-        CancelInvoke(nameof(ResetAndGenerate));
-        Invoke(nameof(ResetAndGenerate), delay);
+        CancelInvoke(nameof(EndRound));
+        Invoke(nameof(EndRound), delay);
+    }
+
+    /// <summary>
+    /// 一局结束：先结算最终存活，再切换地图。
+    /// 只有活到切图前一刻的坦克才算存活；等待期间被流弹击毁的不算。
+    /// </summary>
+    void EndRound()
+    {
+        AwardSurvivals();
+        ResetAndGenerate();
+    }
+
+    void AwardSurvivals()
+    {
+        if (!IsServer) return;
+        var playerListManager = FindObjectOfType<PlayerListManager>();
+        if (playerListManager == null) return;
+        foreach (var tank in FindObjectsOfType<TankController>())
+        {
+            if (tank == null || !tank.IsSpawned) continue;
+            playerListManager.AddSurvival(tank.playerId);
+        }
     }
 
     [ClientRpc]
