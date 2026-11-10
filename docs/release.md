@@ -85,7 +85,7 @@ git push origin v1.0.0
 | `Unsupported protocol version`（505） | 旧版 Hub 授权客户端与编辑器不兼容；工作流已用 `-manualLicenseFile` 绕开，仍失败可更新 Unity Hub |
 | 构建失败 | 看日志里 `[Build]` 开头的行；确认 Build Settings 里的三个场景都启用 |
 | 产物缺失 | `Build/Windows/tank.exe` 是否生成；日志末尾的 `[Build]` 结果 |
-| 图形初始化相关报错 | 工作流里的 `-nographics` 在本机不合适时，删掉该参数再试 |
+| 启动阶段就退出、授权没加载完 | 不要加 `-nographics`；本工程在无图形模式下会在启动阶段退出 |
 | 版本号报错 | 标签只用 `v1.2.3` / `v1.2.3-beta.1` 这类字符（字母、数字、`.`、`_`、`-`） |
 
 ## 安全注意

@@ -69,6 +69,8 @@ jobs:
       # 把 ULF 复制到临时文件再传给 -manualLicenseFile：
       # 授权客户端会锁住原文件，直接传原路径会报“文件被另一个进程占用”。
       # 这样即使 Unity Hub 的授权客户端版本不兼容，也能离线加载许可证。
+      # 注意不要加 -nographics：本工程的 UI Toolkit / MCP 包在无图形模式下
+      # 会在启动阶段退出，导致 manualLicenseFile 还没加载 Unity 就结束了。
       - name: Unity 打包（Windows x64）
         shell: powershell
         run: |
@@ -104,7 +106,6 @@ jobs:
 
           $unityArgs = @(
             "-batchmode",
-            "-nographics",
             "-quit",
             "-projectPath", "$env:GITHUB_WORKSPACE",
             "-executeMethod", "BuildScript.BuildWindows",
