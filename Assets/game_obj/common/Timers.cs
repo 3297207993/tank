@@ -1,6 +1,8 @@
 //通用计时工具：只记一个“未来时刻”，冷却、节流、状态有效期都由它表达。
 //按单调递增的秒数工作（例如 Time.time），调用方传同一个 now 即可。
 
+using System;
+
 //到点要自动重新排期的场合（冷却/限流）用 TryPass；只是“某状态有效到什么时候”用 Set + HasTimeLeft。
 public struct TimeGate
 {
@@ -19,7 +21,7 @@ public struct TimeGate
     }
 
     //把到点时刻设为 now + seconds（传 0 即立即失效）
-    public void Set(float now, float seconds)
+    public void Set(float now, float seconds = 0.0f)
     {
         deadline = now + seconds;
     }
@@ -54,6 +56,31 @@ public struct Timed<T>
     public void Set(float now, float seconds, T newValue)
     {
         value = newValue;
+        gate.Set(now, seconds);
+    }
+
+    public void SetIfDue(float now, float seconds, T newValue)
+    {
+        if (gate.IsDue(now))
+        {
+            value = newValue;
+            gate.Set(now, seconds);
+        }
+    }
+
+    //回调版：只有真的需要写入时才调用取值回调，未到点不会产生计算开销
+    public void SetIfDue(float now, float seconds, Func<T> createValue)
+    {
+        if (gate.IsDue(now))
+        {
+            value = createValue();
+            gate.Set(now, seconds);
+        }
+    }
+
+    public void Set(float now, float seconds, Func<T> createValue)
+    {
+        value = createValue();
         gate.Set(now, seconds);
     }
 }
