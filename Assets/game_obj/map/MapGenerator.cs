@@ -19,6 +19,14 @@ public class MapGenerator : NetworkBehaviour
 
     //服务器生成后保留格子数据，电脑玩家用它做 A* 寻路
     public MapDataContainer CurrentMap { get; private set; }
+
+    /// <summary>测试专用：直接注入一张构造好的地图，并同步格子尺寸。</summary>
+    internal void SetMapForTests(MapDataContainer mapData)
+    {
+        CurrentMap = mapData;
+        mapSize = mapData.Size;
+    }
+
     readonly List<GameObject> spawnedBots = new List<GameObject>();
 
     public void ResetMap()

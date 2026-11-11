@@ -120,6 +120,8 @@ Gizmos 只在服务器进程里有意义。
 | `Assets/game_obj/map/` | 地图生成、路障 |
 | `Assets/game_obj/ai/` | AI 决策与 A* |
 | `Assets/game_obj/CustomComponents/` | `FixedNetworkTransform` |
+| `Assets/Tests/EditMode/` | EditMode 单元测试（地图、A*、计时、坐标） |
+| `Assets/Tests/PlayMode/` | PlayMode 测试（子弹发射、自动销毁） |
 | `Tools/tank_art/` | 贴图生成脚本 |
 
 更细的模块关系见 [architecture.md](architecture.md)。
@@ -130,7 +132,26 @@ Gizmos 只在服务器进程里有意义。
 
 ## 测试
 
-目前没有自动化测试（`com.unity.test-framework` 已安装，但工程里没有测试程序集或用例）。改动后建议按下面的清单手动回归：
+自动化测试位于 `Assets/Tests`，分两个程序集：
+
+| 程序集 | 位置 | 覆盖内容 |
+| --- | --- | --- |
+| `TankGame.Tests.EditMode` | `Assets/Tests/EditMode` | 地图格子数据与连通性、A* 寻路、`TimeGate`/`Timed` 计时、地图坐标换算、坦克初始弹药与子弹速度、`FixedNetworkTransform` 矩阵叠加 |
+| `TankGame.Tests.PlayMode` | `Assets/Tests/PlayMode` | 子弹发射冲量、`SelfDestroy` 到点销毁 |
+
+在编辑器里用 `Window > General > Test Runner` 运行；日常改逻辑跑 EditMode 即可，涉及物理或生命周期的改动再跑 PlayMode。
+
+命令行（工作区导入过一次后，EditMode 约 2 分钟）：
+
+```bash
+Unity.exe -batchmode -projectPath <工程根目录> -runTests -testPlatform EditMode -testResults <工程根目录>/TestResults/editmode.xml
+```
+
+不要加 `-nographics`（原因和打包流程相同，见 [release.md](release.md)）。结果写入 `TestResults/`，该目录已被 `.gitignore` 忽略。注意 `-runTests` 的进程退出码不反映用例失败，要检查结果 XML 里的 `result` 属性。
+
+游戏代码由 `Assets/TankGame.asmdef` 统一编译（`Assets/game_obj`、`Assets/control` 自动包含），编辑器脚本在 `Assets/Editor/TankGame.Editor.asmdef`。测试程序集通过 `InternalsVisibleTo` 访问 `AiNavigation`；`MapGenerator.SetMapForTests` 用于注入小地图，避免测试依赖联网和预制体。
+
+自动化测试覆盖不到联网、UI 和场景切换，改动后仍建议手动回归：
 
 - [ ] 主菜单三个按钮都能用。
 - [ ] 开房间后，大厅显示 1 名玩家。
