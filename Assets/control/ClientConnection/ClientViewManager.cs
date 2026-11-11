@@ -51,6 +51,7 @@ public class ClientViewManager : MonoBehaviour
         nameInputField.RegisterValueChangedCallback((evt) =>
         {
             clientName = evt.newValue;
+            RefreshInputState();
         });
         addressInputField.RegisterValueChangedCallback((evt) =>
         {
@@ -84,6 +85,7 @@ public class ClientViewManager : MonoBehaviour
 
     void RefreshInputState()
     {
+        var nameEmpty = string.IsNullOrWhiteSpace(nameInputField.value);
         var addressEmpty = string.IsNullOrWhiteSpace(addressInputField.value);
         var portEmpty = string.IsNullOrWhiteSpace(portInputField.value);
         var addressOk = ServerAddress.TryParse(addressInputField.value, out _, out _, out var addressError);
@@ -93,11 +95,13 @@ public class ClientViewManager : MonoBehaviour
         SetFieldState(portInputField, portEmpty, portOk);
         portPlaceholder.style.display = portEmpty ? DisplayStyle.Flex : DisplayStyle.None;
 
+        // 名字必填：空着会沿用静态字段的默认值“房主”，和大厅里的房主重名
         if (!addressEmpty && !addressOk) SetTip(addressError, true);
         else if (!portEmpty && !portOk) SetTip(portError, true);
+        else if (nameEmpty) SetTip("请先填写你的名字");
         else SetTip(string.Empty);
 
-        okButton.SetEnabled(addressOk && portOk && !connecting);
+        okButton.SetEnabled(!nameEmpty && addressOk && portOk && !connecting);
     }
 
     static void SetFieldState(TextField field, bool empty, bool valid)
@@ -130,6 +134,15 @@ public class ClientViewManager : MonoBehaviour
     async void Connect()
     {
         if (connecting) return;
+
+        var name = (nameInputField.value ?? string.Empty).Trim();
+        if (name.Length == 0)
+        {
+            // 按钮本来就会禁用，这里再兜一层，防止以后接了回车键之类的入口绕过校验
+            RefreshInputState();
+            SetTip("请先填写你的名字", true);
+            return;
+        }
 
         if (!ServerAddress.TryParse(addressInputField.value, out var host, out var addressPort, out var error))
         {
@@ -170,6 +183,8 @@ public class ClientViewManager : MonoBehaviour
 
             if (NetworkManager.Singleton == null) return;
 
+            // 去掉首尾空白后再交给服务器，大厅里不会出现“ 张三 ”这种名字
+            clientName = name;
             transport.ConnectionData.Address = address;
             transport.ConnectionData.Port = port;
 

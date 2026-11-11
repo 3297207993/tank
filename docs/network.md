@@ -66,7 +66,7 @@ sequenceDiagram
 - UTP 1.x 不会自己解析域名，所以 `ClientViewManager` 先在后台线程 `Dns.GetHostAddresses`，优先取 IPv4。
 - 地址栏支持直接粘贴 `http://example.com:7788/path`、`ws://host`、`[::1]:7788` 这类写法，协议头和路径会被丢弃。
 - 端口栏留空时用地址里写的端口；再没有就用场景里 `UnityTransport` 配置的默认端口。
-- 名字存在静态字段 `ClientViewManager.clientName`，默认值是“房主”（客户端不填名字时会显示成这个）。
+- 名字是必填项：为空或只有空白时“确定”不可点，并提示“请先填写你的名字”；连接前会去掉首尾空白，再写入静态字段 `ClientViewManager.clientName`。这个字段的初始值“房主”只给房主自己用。
 
 房主侧由 `HostController` 负责：`Start()` 里延迟 0.1 秒，确认自己还不是客户端后调用 `StartHost()`。这个延迟是为了等 `NetworkManager` 和其他对象初始化完。销毁时如果自己是 Host，会 `Shutdown()` 并 `Destroy` 掉 `NetworkManager`。
 
