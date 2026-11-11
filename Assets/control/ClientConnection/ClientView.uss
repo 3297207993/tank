@@ -48,6 +48,12 @@
     max-height: 116px;
 }
 
+/* ListView 在没有条目时会自带一行“List is empty”，这行不受游戏语言控制。
+   空状态由下面的 discoverHint 负责，把它隐藏掉。 */
+.room-list .unity-list-view__empty-label {
+    display: none;
+}
+
 .room-row {
     flex-direction: row;
     align-items: center;
