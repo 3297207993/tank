@@ -21,6 +21,7 @@ public class ClientViewManager : MonoBehaviour
     ushort defaultPort = 7777;
     bool connecting;
     bool destroyed;
+    RoomBrowser roomBrowser;
 
     void Start()
     {
@@ -65,6 +66,20 @@ public class ClientViewManager : MonoBehaviour
             RefreshInputState();
         });
         RefreshInputState();
+
+        // 房间发现失败也不影响手动填写地址，所以不在这里阻断流程
+        roomBrowser = gameObject.AddComponent<RoomBrowser>();
+        roomBrowser.RoomSelected += OnRoomSelected;
+    }
+
+    void OnRoomSelected(DiscoveredRoom room)
+    {
+        if (room == null) return;
+
+        addressInputField.SetValueWithoutNotify(room.Address);
+        portInputField.SetValueWithoutNotify(room.Info.gamePort != 0 ? room.Info.gamePort.ToString() : string.Empty);
+        RefreshInputState();
+        SetTip($"已选择 {room.Info.roomName}（{room.Address}:{room.Info.gamePort}），点“确定”加入");
     }
 
     void RefreshInputState()
@@ -185,6 +200,7 @@ public class ClientViewManager : MonoBehaviour
     void OnDestroy()
     {
         destroyed = true;
+        if (roomBrowser != null) roomBrowser.RoomSelected -= OnRoomSelected;
     }
 
     public static string clientName = "房主";

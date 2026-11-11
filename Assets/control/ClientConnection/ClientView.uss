@@ -14,6 +14,111 @@
     margin-bottom: 24px;
 }
 
+/* 附近的房间：搜索到的房间列表 + 提示 */
+.discover {
+    flex-shrink: 0;
+    margin-bottom: 18px;
+}
+
+.discover-head {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    margin-bottom: 8px;
+}
+
+.discover-title {
+    font-size: 22px;
+    color: rgba(244, 239, 228, 0.85);
+}
+
+.discover-refresh {
+    width: 88px;
+    height: 34px;
+    font-size: 19px;
+    border-radius: 8px;
+}
+
+.room-list {
+    flex-grow: 0;
+    flex-shrink: 0;
+    min-height: 0;
+    /* 最多露两行，再多就列表内部滚动，避免卡片在小屏上超出画面 */
+    max-height: 116px;
+}
+
+.room-row {
+    flex-direction: row;
+    align-items: center;
+    height: 52px;
+    flex-shrink: 0;
+    padding: 0 14px 0 14px;
+    margin-bottom: 6px;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.05);
+    transition-property: background-color;
+    transition-duration: 0.12s;
+}
+
+.room-row:hover {
+    background-color: rgba(255, 255, 255, 0.10);
+}
+
+.room-main {
+    flex-direction: row;
+    align-items: center;
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.room-name {
+    font-size: 23px;
+    color: rgb(235, 235, 235);
+    max-width: 260px;
+}
+
+.room-host {
+    font-size: 18px;
+    color: rgba(244, 239, 228, 0.5);
+    margin-left: 12px;
+    max-width: 150px;
+}
+
+.room-players {
+    width: 64px;
+    flex-shrink: 0;
+    font-size: 19px;
+    color: rgba(244, 239, 228, 0.65);
+    -unity-text-align: middle-right;
+}
+
+.room-state {
+    width: 64px;
+    flex-shrink: 0;
+    font-size: 18px;
+    color: rgb(242, 181, 68);
+    -unity-text-align: middle-right;
+}
+
+/* 已经开局的房间压暗一些，大厅里的房间更显眼 */
+.room-row--in-game {
+    opacity: 0.55;
+}
+
+.discover-hint {
+    height: 22px;
+    flex-shrink: 0;
+    margin-top: 4px;
+    font-size: 18px;
+    color: rgba(244, 239, 228, 0.5);
+    -unity-text-align: middle-left;
+}
+
+.discover-hint--error {
+    color: rgb(240, 138, 118);
+}
+
 .row {
     flex-direction: row;
     align-items: center;

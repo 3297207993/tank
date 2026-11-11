@@ -70,6 +70,55 @@ sequenceDiagram
 
 房主侧由 `HostController` 负责：`Start()` 里延迟 0.1 秒，确认自己还不是客户端后调用 `StartHost()`。这个延迟是为了等 `NetworkManager` 和其他对象初始化完。销毁时如果自己是 Host，会 `Shutdown()` 并 `Destroy` 掉 `NetworkManager`。
 
+## 局域网房间发现
+
+客户端不必再问房主 IP：房主开房后会周期性公告房间，客户端在“加入房间”界面里直接选。
+
+发现走一条**独立的 UDP 旁路**（`47777`），不占用 UnityTransport 的游戏端口（`7777` 只是公告里的数据）：
+
+- 房主：`RoomBeacon` 每 1 秒把公告发到组播组 `239.255.42.99:47777`，同时向每个网段的定向广播地址发一份；收到探测包时立刻用收到包的那块网卡单播回一包。
+- 客户端：`RoomBrowser` 每 1 秒发一次探测，同时持续监听公告。同一 `roomId` 从多块网卡收到时只显示一条；超过 4 秒没再收到公告就从列表移除（视为房主已离开）。
+- 每块在线 IPv4 网卡各建一个 socket，组播和广播分别从对应网卡发出，避免 VPN / Hyper-V 虚拟网卡把包带到错误的路由。
+- 客户端用**收到公告的来源地址**去连接，而不是房主自己报的 IP——房主不知道哪块网卡对客户端可达。
+- 点房间行会把地址和端口回填到原来的表单，之后仍走 `ClientViewManager.Connect()`；手动填地址的路径完全保留，组播被挡住时照样能连。
+
+### 报文
+
+| 字段 | 长度 | 说明 |
+| --- | --- | --- |
+| magic | 4 | `"TANK"`，过滤无关的 UDP 流量 |
+| version | 1 | 协议版本，当前为 1 |
+| type | 1 | `1` 探测，`2` 公告 |
+| roomId | 8 | 房主启动时随机生成，客户端用它去重 |
+| gamePort | 2 | 房主的 UnityTransport 端口 |
+| players | 1 | 当前人数（含电脑玩家） |
+| flags | 1 | bit0：是否已开局 |
+| roomName | 2 + ≤64 | UTF-8，长度前缀为 ushort |
+| hostName | 2 + ≤64 | 同上 |
+
+探测包只有前 6 字节，一包公告最大 150 字节。
+
+### 名字长度
+
+房间名和房主名各上限 **64 字节 UTF-8**，和游戏内 `FixedString64Bytes` 的名字上限一致：20 个汉字约占 60 字节。超长时按字符边界截断，不会切出半个汉字。
+
+### 代码位置
+
+| 文件 | 作用 |
+| --- | --- |
+| `control/Network/LanDiscovery/DiscoveryProtocol.cs` | 报文编解码，纯 C#，可在 EditMode 里直接测 |
+| `control/Network/LanDiscovery/DiscoveryChannel.cs` | 多网卡 UDP 收发、组播与定向广播 |
+| `control/Network/LanDiscovery/RoomBeacon.cs` | 房主端公告与探测应答 |
+| `control/Network/LanDiscovery/RoomBrowser.cs` | 客户端房间列表与选择回填 |
+
+### 已知限制
+
+- 组播 / 广播不跨路由器；跨网段只能手动填地址。
+- 部分公共 Wi-Fi 开了客户端隔离（AP isolation），发现和直连都会失败。
+- 发布版第一次开房时，Windows 防火墙会询问是否放行入站 UDP；可选“允许”并勾选专用网络，也可以手动加一条 UDP `47777` 的入站规则。
+- 同一台机器多开（ParrelSync）时，两个实例都用 `ReuseAddress` 绑定 `47777`，组播回环可以让它们互相发现。
+- 发现只支持 IPv4。
+
 ## RPC 与网络状态清单
 
 ### ServerRpc（客户端 → 服务器）
@@ -217,3 +266,4 @@ bool isBot;
 3. 客户端卡在连接界面时看 Console：`StartClient()` 返回 false 通常是对端没监听或地址/端口不对。
 4. 域名连不上先确认 DNS 能解析；UTP 自己不做 DNS。
 5. `NetworkManager` 的 `EnableNetworkLogs` 已开启，日志级别为 Normal。
+6. “附近的房间”搜不到：先确认两台机器在同一网段，再检查 Windows 防火墙是否放行 UDP `47777` 入站；公共 Wi-Fi 的客户端隔离会同时挡住发现和直连，此时只能手动填地址。

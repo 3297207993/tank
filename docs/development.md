@@ -17,7 +17,7 @@
 2. 打开 `Assets/Scenes/start.unity`。
 3. 点击 Play。
 4. 房主：点“开房间” → 进入 `Host` 场景。
-5. 客户端：另开一个实例 → 点“加入房间” → 地址 `127.0.0.1`、端口留空、填名字 → “确定”。
+5. 客户端：另开一个实例 → 点“加入房间” → 在“附近的房间”里点房主的房间（也可以手动填 `127.0.0.1`、端口留空）、填名字 → “确定”。
 
 三个场景都必须保留在 Build Settings 里（`start`、`Host`、`Client`），且顺序不要随意调整——客户端连接后要靠 Netcode 的场景同步加载 `Host` 场景。
 
@@ -29,7 +29,7 @@
 2. `Create New Clone`，会在工程旁边生成一个克隆目录。
 3. 用 `Open in New Editor` 打开克隆项目。
 4. 两个编辑器都点 Play。
-5. 一个开房间，一个加入 `127.0.0.1`。
+5. 一个开房间，一个在“附近的房间”里点它（同机组播回环可以让两个实例互相发现），也可以手动加入 `127.0.0.1`。
 
 克隆项目和原项目共享 `Assets` / `ProjectSettings` 的源文件（符号链接或同步），但各自有独立的 `Library` 和进程，所以能同时运行两个客户端。
 
@@ -37,14 +37,15 @@
 
 1. 在编辑器里开房间。
 2. `File > Build And Run` 出 Windows 包。
-3. 运行构建包，加入 `127.0.0.1`。
+3. 运行构建包，在“附近的房间”里选房主的房间，或手动加入 `127.0.0.1`。
 
 ## 局域网联机
 
 1. 房主侧确认 `Host` 场景的 `UnityTransport` 监听 `0.0.0.0:7777`（默认已配好）。
-2. Windows 防火墙放行 Unity 编辑器/构建程序的 **UDP 7777** 入站。
-3. 客户端地址填房主的内网 IPv4（`ipconfig` 查看），端口 7777。
-4. 如果填域名，客户端会先做 DNS 解析；解析失败会提示“无法解析地址”。
+2. Windows 防火墙放行 Unity 编辑器/构建程序的 **UDP 7777**（联机）和 **UDP 47777**（房间发现）入站。
+3. 客户端打开“加入房间”，同一网段的房间会出现在“附近的房间”里，点一下再点“确定”。
+4. 搜不到房间时，手动填房主的内网 IPv4（`ipconfig` 查看）和端口 7777；公共 Wi-Fi 的客户端隔离会同时挡住发现和直连。
+5. 如果填域名，客户端会先做 DNS 解析；解析失败会提示“无法解析地址”。
 
 ## 构建
 
@@ -109,10 +110,10 @@ Gizmos 只在服务器进程里有意义。
 | `Assets/Scenes/Host.unity` | 房主 / 服务器 / 通用游戏场景 |
 | `Assets/Scenes/Client.unity` | 连接表单 |
 | `Assets/control/StartScene/` | 主菜单按钮与场景跳转 |
-| `Assets/control/ClientConnection/` | 地址表单、DNS、连接 |
+| `Assets/control/ClientConnection/` | 房间列表、地址表单、DNS、连接 |
 | `Assets/control/HostConnectionView/` | 大厅、玩家列表、踢人、加电脑 |
 | `Assets/control/ScoreTable/` | 计分板 |
-| `Assets/control/Network/` | `HostController`、`ServerAddress` |
+| `Assets/control/Network/` | `HostController`、`ServerAddress`、局域网房间发现 |
 | `Assets/control/HostViewManager/` | 顶部栏按钮 |
 | `Assets/control/style/` | 公共 USS |
 | `Assets/game_obj/tank/` | 坦克控制、预制体、贴图 |

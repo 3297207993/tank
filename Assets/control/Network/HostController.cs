@@ -14,7 +14,12 @@ public class HostController : MonoBehaviour
 
     void StartHost()
     {
-        if(!NetworkManager.Singleton.IsClient)NetworkManager.Singleton.StartHost();
+        if (NetworkManager.Singleton.IsClient) return;
+
+        if (!NetworkManager.Singleton.StartHost()) return;
+
+        //网络起来后再开始局域网广播；发现失败不影响联机，所以不检查结果
+        if (GetComponent<RoomBeacon>() == null) gameObject.AddComponent<RoomBeacon>();
     }
 
     // Update is called once per frame

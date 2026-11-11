@@ -10,7 +10,7 @@
 flowchart TD
     A["start.unity<br/>主菜单"] -->|开房间| H["Host.unity"]
     A -->|加入房间| C["Client.unity"]
-    C -->|填写地址并 StartClient| S["Netcode 场景同步"]
+    C -->|选房间或填地址并 StartClient| S["Netcode 场景同步"]
     S -->|同步服务器当前场景| H
     H -->|房主点“开始”| G["同一场景内的战斗"]
     G -->|只剩 1 辆坦克| G
@@ -20,12 +20,12 @@ flowchart TD
 | --- | --- | --- |
 | `start.unity` | 主菜单 | `StartView`（UIDocument）、`StartViewManager`、`StartSceneControler` |
 | `Host.unity` | 房主 + 服务器；也是联机后的通用游戏场景 | `NetworkManager`、`MapManager`、`PlayerListManager`、`ConnectionView`、`ScoreView`、`Canvas`、`MapContainer`、`NetworkLifeTimeHolder` |
-| `Client.unity` | 连接前的表单 | `NetWorkManager`、`main`（UIDocument + `ClientViewManager`） |
+| `Client.unity` | 连接前的房间发现与表单 | `NetWorkManager`、`main`（UIDocument + `ClientViewManager`，运行时挂 `RoomBrowser`） |
 
 关键点：`NetworkManager` 的 `EnableSceneManagement` 是开启的。客户端连接成功后，Netcode 会把服务器当前所在的 `Host` 场景同步到客户端，所以：
 
 - `PlayerListManager`、大厅、计分板这些只放在 `Host` 场景里的对象，客户端也有一份。
-- `Client` 场景只负责“连接前”的地址表单；连上之后，界面和玩法对象都来自同步过来的 `Host` 场景。
+- `Client` 场景只负责“连接前”的房间发现和地址表单；连上之后，界面和玩法对象都来自同步过来的 `Host` 场景。
 - `HostController` 在客户端也会随场景加载而运行，但它用 `if (!NetworkManager.Singleton.IsClient) StartHost()` 做了守卫，不会重复开房。
 
 ## Host 场景对象职责

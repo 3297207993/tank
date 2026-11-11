@@ -4,7 +4,15 @@
     <ui:VisualElement name="root" class="root tk-root">
         <ui:VisualElement name="card" class="card tk-card">
             <ui:Label tabindex="-1" class="title tk-title" text="加入房间" parse-escape-sequences="true" />
-            <ui:Label tabindex="-1" class="subtitle tk-subtitle" text="填入房主分享的地址与端口" parse-escape-sequences="true" />
+            <ui:Label tabindex="-1" class="subtitle tk-subtitle" text="选择附近的房间，或填入房主分享的地址与端口" parse-escape-sequences="true" />
+            <ui:VisualElement class="discover">
+                <ui:VisualElement class="discover-head">
+                    <ui:Label tabindex="-1" class="discover-title" text="附近的房间" parse-escape-sequences="true" />
+                    <ui:Button class="tk-btn tk-btn--ghost discover-refresh" name="refresh" text="刷新" parse-escape-sequences="true" />
+                </ui:VisualElement>
+                <ui:ListView name="rooms" class="room-list" virtualization-method="FixedHeight" fixed-item-height="58" />
+                <ui:Label tabindex="-1" name="discoverHint" class="discover-hint" text="正在搜索附近的房间…" parse-escape-sequences="true" />
+            </ui:VisualElement>
             <ui:VisualElement class="row">
                 <ui:Label tabindex="-1" class="field-label" text="名字" parse-escape-sequences="true" />
                 <ui:TextField picking-mode="Ignore" usage-hints="None" is-delayed="false" max-length="-1" hide-mobile-input="false" name="name" class="field" />

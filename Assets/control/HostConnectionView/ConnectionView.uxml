@@ -8,7 +8,7 @@
                 <ui:Label tabindex="-1" class="tk-title" text="房间大厅" parse-escape-sequences="true" />
                 <ui:Label tabindex="-1" name="count" class="player-count" text="1 名玩家" parse-escape-sequences="true" />
             </ui:VisualElement>
-            <ui:Label tabindex="-1" class="tk-subtitle lobby-subtitle" text="把地址分享给朋友，人到齐后开始对局" parse-escape-sequences="true" />
+            <ui:Label tabindex="-1" class="tk-subtitle lobby-subtitle" text="同一局域网的朋友能直接看到这间房，人到齐后开始对局" parse-escape-sequences="true" />
             <ui:VisualElement class="list-head">
                 <ui:Label tabindex="-1" class="head-cell col-name" text="玩家" parse-escape-sequences="true" />
                 <ui:Label tabindex="-1" class="head-cell col-id" text="ID" parse-escape-sequences="true" />

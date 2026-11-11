@@ -17,6 +17,8 @@ public class ConnectionViewManager : NetworkBehaviour
     Label countLabel;
     Label hintLabel;
     bool gameStarted;
+    //给房间发现用：公告里要告诉别人这间房是不是已经开局了
+    public bool GameStarted => gameStarted;
     readonly List<PlayerListManager.ClientData> playerList = new List<PlayerListManager.ClientData>();
     PlayerListManager playerListManager;
     ScoreViewManager scoreViewManager;
